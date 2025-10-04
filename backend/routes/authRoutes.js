@@ -2,14 +2,16 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
-const User = require('../models/User');
-const auth = require('../middleware/auth'); // Uses the robust combined middleware
+const bcrypt = require('bcryptjs');
+const { MongoClient, ObjectId } = require('mongodb');
+const { authenticateToken } = require('../utils/jwtAuth');
 
 const router = express.Router();
+const client = new MongoClient(process.env.MONGO_URI);
 
-// Generate Token (inline if utility is not used)
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+// Generate Token
+const generateToken = (userId, email, username) => {
+  return jwt.sign({ userId, email, username }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d'
   });
 };
@@ -27,54 +29,66 @@ const authLimiter = rateLimit({
 // Register
 router.post('/register', authLimiter, async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { username, email, password } = req.body;
 
     // Basic field validation
-    if (!name || !email || !password) {
+    if (!username || !email || !password) {
       return res.status(400).json({
-        success: false,
-        message: 'Please provide name, email, and password'
+        message: 'Username, email, and password are required'
       });
     }
 
-    // Additional password length validation (model also does this)
+    // Password length validation
     if (password.length < 6) {
       return res.status(400).json({
-        success: false,
-        message: 'Password must be at least 6 characters'
+        message: 'Password must be at least 6 characters long'
       });
     }
+
+    await client.connect();
+    const db = client.db('zynk');
+    const users = db.collection('users');
 
     // Check for existing user
-    if (await User.findOne({ email })) {
-      return res.status(400).json({
-        success: false,
-        message: 'User already exists with this email'
+    const existingUser = await users.findOne({ $or: [{ email }, { username }] });
+    if (existingUser) {
+      return res.status(409).json({
+        message: 'User with this email or username already exists'
       });
     }
 
-    // Create user
-    const user = await User.create({ name, email, password });
-    const token = generateToken(user._id);
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Create new user
+    const newUser = {
+      username,
+      email,
+      password: hashedPassword,
+      avatar: null,
+      bio: '',
+      followers: [],
+      following: [],
+      postsCount: 0,
+      isVerified: false,
+      isPrivate: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const result = await users.insertOne(newUser);
 
     res.status(201).json({
-      success: true,
-      message: 'User registered successfully',
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        createdAt: user.createdAt
-      }
+      message: 'User created successfully',
+      userId: result.insertedId
     });
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({
-      success: false,
-      message: 'Server error during registration'
+      message: 'Internal server error'
     });
+  } finally {
+    await client.close();
   }
 });
 
@@ -86,61 +100,107 @@ router.post('/login', authLimiter, async (req, res) => {
     // Basic field validation
     if (!email || !password) {
       return res.status(400).json({
-        success: false,
-        message: 'Please provide email and password'
+        message: 'Email and password are required'
       });
     }
 
-    // Find user and check password
-    const user = await User.findOne({ email });
-    if (!user || !(await user.comparePassword(password))) {
+    await client.connect();
+    const db = client.db('zynk');
+    const users = db.collection('users');
+
+    // Find user
+    const user = await users.findOne({ email });
+    if (!user) {
       return res.status(401).json({
-        success: false,
-        message: 'Invalid email or password'
+        message: 'Invalid credentials'
       });
     }
 
-    const token = generateToken(user._id);
+    // Check password
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({
+        message: 'Invalid credentials'
+      });
+    }
+
+    // Generate token
+    const token = generateToken(user._id.toString(), user.email, user.username);
+
+    // Update last login
+    await users.updateOne({ _id: user._id }, { $set: { lastLogin: new Date() } });
+
+    // Set cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
     res.json({
-      success: true,
       message: 'Login successful',
-      token,
       user: {
         id: user._id,
-        name: user.name,
+        username: user.username,
         email: user.email,
-        role: user.role,
-        createdAt: user.createdAt
+        avatar: user.avatar,
+        bio: user.bio,
       }
     });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
-      success: false,
-      message: 'Server error during login'
+      message: 'Internal server error'
     });
+  } finally {
+    await client.close();
   }
 });
 
 // Get current user
-router.get('/me', auth, (req, res) => {
-  res.json({
-    success: true,
-    user: {
-      id: req.user._id,
-      name: req.user.name,
-      email: req.user.email,
-      role: req.user.role,
-      createdAt: req.user.createdAt
+router.get('/me', authenticateToken, async (req, res) => {
+  try {
+    await client.connect();
+    const db = client.db('zynk');
+    const users = db.collection('users');
+
+    const user = await users.findOne({ _id: new ObjectId(req.user.userId) });
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found'
+      });
     }
-  });
+
+    res.json({
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        avatar: user.avatar,
+        bio: user.bio,
+        followers: user.followers || [],
+        following: user.following || [],
+        postsCount: user.postsCount || 0,
+        isVerified: user.isVerified || false,
+        isPrivate: user.isPrivate || false,
+        createdAt: user.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Get user error:', error);
+    res.status(500).json({
+      message: 'Internal server error'
+    });
+  } finally {
+    await client.close();
+  }
 });
 
-// Logout (stateless JWT, client must discard token)
+// Logout
 router.post('/logout', (req, res) => {
+  res.clearCookie('token');
   res.json({
-    success: true,
     message: 'Logout successful'
   });
 });

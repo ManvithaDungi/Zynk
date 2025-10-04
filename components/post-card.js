@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,35 +7,8 @@ import { CommentSection } from "@/components/comment-section"
 import { useToast } from "@/hooks/use-toast"
 import { Heart, MessageCircle, Share, MoreHorizontal, Edit, Trash2 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
-import Link from "next/link"
 
-interface Post {
-  id: string
-  content: string
-  images: string[]
-  author: {
-    id: string
-    username: string
-    avatar: string | null
-    isVerified: boolean
-  }
-  likes: string[]
-  comments: number
-  createdAt: Date
-  updatedAt: Date
-}
-
-interface PostCardProps {
-  post: Post
-  currentUserId: string
-  currentUser?: {
-    username: string
-    avatar?: string | null
-  }
-  onDelete?: (postId: string) => void
-}
-
-export function PostCard({ post, currentUserId, currentUser, onDelete }: PostCardProps) {
+export function PostCard({ post, currentUserId, currentUser, onDelete }) {
   const [isLiked, setIsLiked] = useState(post.likes.includes(currentUserId))
   const [likesCount, setLikesCount] = useState(post.likes.length)
   const [showComments, setShowComments] = useState(false)
@@ -84,10 +55,8 @@ export function PostCard({ post, currentUserId, currentUser, onDelete }: PostCar
           url: window.location.href,
         })
       } catch (error) {
-        // User cancelled sharing
       }
     } else {
-      // Fallback: copy to clipboard
       try {
         await navigator.clipboard.writeText(window.location.href)
         toast({
@@ -137,20 +106,19 @@ export function PostCard({ post, currentUserId, currentUser, onDelete }: PostCar
   return (
     <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
       <CardContent className="p-6">
-        {/* Post Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <Link href={`/profile/${post.author.username}`}>
+            <a href={`/profile/${post.author.username}`}>
               <Avatar className="h-10 w-10 cursor-pointer">
                 <AvatarImage src={post.author.avatar || ""} />
                 <AvatarFallback>{post.author.username.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
-            </Link>
+            </a>
             <div>
               <div className="flex items-center gap-2">
-                <Link href={`/profile/${post.author.username}`} className="font-semibold hover:underline">
+                <a href={`/profile/${post.author.username}`} className="font-semibold hover:underline">
                   {post.author.username}
-                </Link>
+                </a>
                 {post.author.isVerified && (
                   <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center">
                     <span className="text-primary-foreground text-xs">✓</span>
@@ -185,14 +153,12 @@ export function PostCard({ post, currentUserId, currentUser, onDelete }: PostCar
           )}
         </div>
 
-        {/* Post Content */}
         {post.content && (
           <div className="mb-4">
             <p className="text-sm leading-relaxed whitespace-pre-wrap">{post.content}</p>
           </div>
         )}
 
-        {/* Post Images */}
         {post.images.length > 0 && (
           <div className="mb-4">
             {post.images.length === 1 ? (
@@ -216,7 +182,6 @@ export function PostCard({ post, currentUserId, currentUser, onDelete }: PostCar
           </div>
         )}
 
-        {/* Post Actions */}
         <div className="flex items-center justify-between pt-4 border-t border-border/40">
           <div className="flex items-center gap-4">
             <Button
@@ -242,7 +207,6 @@ export function PostCard({ post, currentUserId, currentUser, onDelete }: PostCar
           </div>
         </div>
 
-        {/* Comments Section */}
         {showComments && currentUser && (
           <div className="mt-6 pt-6 border-t border-border/40">
             <CommentSection postId={post.id} currentUserId={currentUserId} currentUser={currentUser} />
@@ -252,3 +216,5 @@ export function PostCard({ post, currentUserId, currentUser, onDelete }: PostCar
     </Card>
   )
 }
+
+

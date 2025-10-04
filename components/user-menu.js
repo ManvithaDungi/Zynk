@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -13,13 +11,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { User, Settings, LogOut } from "lucide-react"
-import type { User as UserType } from "@/lib/auth"
 
-interface UserMenuProps {
-  user: UserType
-}
-
-export function UserMenu({ user }: UserMenuProps) {
+export function UserMenu({ user }) {
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
 
@@ -88,3 +81,5 @@ export function UserMenu({ user }: UserMenuProps) {
     </DropdownMenu>
   )
 }
+
+

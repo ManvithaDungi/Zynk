@@ -1,12 +1,10 @@
-"use client"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Bell } from "lucide-react"
 
 export function NotificationBell() {
-  const [notificationCount] = useState(3) // This would come from an API
+  const [notificationCount] = useState(3)
 
   return (
     <Button variant="ghost" size="sm" className="relative">
@@ -22,3 +20,5 @@ export function NotificationBell() {
     </Button>
   )
 }
+
+

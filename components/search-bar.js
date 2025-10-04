@@ -1,7 +1,3 @@
-"use client"
-
-import type React from "react"
-
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
@@ -9,7 +5,7 @@ import { Search } from "lucide-react"
 export function SearchBar() {
   const [query, setQuery] = useState("")
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = (e) => {
     e.preventDefault()
     if (query.trim()) {
       window.location.href = `/search?q=${encodeURIComponent(query.trim())}`
@@ -31,3 +27,5 @@ export function SearchBar() {
     </form>
   )
 }
+
+

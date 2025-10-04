@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
@@ -12,31 +12,8 @@ import { useToast } from "@/hooks/use-toast"
 import { Send, MoreHorizontal, Trash2, Heart, Loader2 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 
-interface Comment {
-  id: string
-  content: string
-  author: {
-    id: string
-    username: string
-    avatar: string | null
-    isVerified: boolean
-  }
-  likes: string[]
-  createdAt: Date
-  updatedAt: Date
-}
-
-interface CommentSectionProps {
-  postId: string
-  currentUserId: string
-  currentUser: {
-    username: string
-    avatar?: string | null
-  }
-}
-
-export function CommentSection({ postId, currentUserId, currentUser }: CommentSectionProps) {
-  const [comments, setComments] = useState<Comment[]>([])
+export function CommentSection({ postId, currentUserId, currentUser }) {
+  const [comments, setComments] = useState([])
   const [newComment, setNewComment] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -60,7 +37,7 @@ export function CommentSection({ postId, currentUserId, currentUser }: CommentSe
     }
   }
 
-  const handleSubmitComment = async (e: React.FormEvent) => {
+  const handleSubmitComment = async (e) => {
     e.preventDefault()
     if (!newComment.trim()) return
 
@@ -99,7 +76,7 @@ export function CommentSection({ postId, currentUserId, currentUser }: CommentSe
     }
   }
 
-  const handleLikeComment = async (commentId: string) => {
+  const handleLikeComment = async (commentId) => {
     try {
       const response = await fetch(`/api/posts/${postId}/comments/${commentId}/like`, {
         method: "POST",
@@ -129,7 +106,7 @@ export function CommentSection({ postId, currentUserId, currentUser }: CommentSe
     }
   }
 
-  const handleDeleteComment = async (commentId: string) => {
+  const handleDeleteComment = async (commentId) => {
     if (!confirm("Are you sure you want to delete this comment?")) return
 
     try {

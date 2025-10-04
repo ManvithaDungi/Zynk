@@ -1,7 +1,3 @@
-"use client"
-
-import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -12,33 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PostCard } from "@/components/post-card"
 import { FollowButton } from "@/components/follow-button"
 import { Search, TrendingUp, Users, Hash, Loader2 } from "lucide-react"
-import Link from "next/link"
-import type { User } from "@/lib/auth"
 
-interface TrendingTopic {
-  tag: string
-  posts: number
-}
-
-interface SuggestedUser {
-  id: string
-  username: string
-  avatar: string | null
-  bio: string
-  followers: string[]
-  isVerified: boolean
-}
-
-interface ExploreContentProps {
-  user: User
-}
-
-export function ExploreContent({ user }: ExploreContentProps) {
+export function ExploreContent({ user }) {
   const [searchQuery, setSearchQuery] = useState("")
-  const [searchResults, setSearchResults] = useState<any[]>([])
-  const [trendingTopics, setTrendingTopics] = useState<TrendingTopic[]>([])
-  const [suggestedUsers, setSuggestedUsers] = useState<SuggestedUser[]>([])
-  const [trendingPosts, setTrendingPosts] = useState<any[]>([])
+  const [searchResults, setSearchResults] = useState([])
+  const [trendingTopics, setTrendingTopics] = useState([])
+  const [suggestedUsers, setSuggestedUsers] = useState([])
+  const [trendingPosts, setTrendingPosts] = useState([])
   const [isSearching, setIsSearching] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -75,7 +51,7 @@ export function ExploreContent({ user }: ExploreContentProps) {
     }
   }
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = async (e) => {
     e.preventDefault()
     if (!searchQuery.trim()) return
 
@@ -104,7 +80,6 @@ export function ExploreContent({ user }: ExploreContentProps) {
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
-      {/* Search Section */}
       <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -125,7 +100,6 @@ export function ExploreContent({ user }: ExploreContentProps) {
             </Button>
           </form>
 
-          {/* Search Results */}
           {searchResults.length > 0 && (
             <div className="mt-6 space-y-4">
               <h3 className="font-semibold">Search Results</h3>
@@ -140,9 +114,9 @@ export function ExploreContent({ user }: ExploreContentProps) {
                         </Avatar>
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <Link href={`/profile/${result.username}`} className="font-semibold hover:underline">
+                            <a href={`/profile/${result.username}`} className="font-semibold hover:underline">
                               {result.username}
-                            </Link>
+                            </a>
                             {result.isVerified && (
                               <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center">
                                 <span className="text-primary-foreground text-xs">✓</span>
@@ -166,7 +140,6 @@ export function ExploreContent({ user }: ExploreContentProps) {
         </CardContent>
       </Card>
 
-      {/* Main Content Tabs */}
       <Tabs defaultValue="trending" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="trending">Trending</TabsTrigger>
@@ -213,9 +186,9 @@ export function ExploreContent({ user }: ExploreContentProps) {
                       </Avatar>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <Link href={`/profile/${suggestedUser.username}`} className="font-semibold hover:underline">
+                          <a href={`/profile/${suggestedUser.username}`} className="font-semibold hover:underline">
                             {suggestedUser.username}
-                          </Link>
+                          </a>
                           {suggestedUser.isVerified && (
                             <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center">
                               <span className="text-primary-foreground text-xs">✓</span>
@@ -271,3 +244,5 @@ export function ExploreContent({ user }: ExploreContentProps) {
     </div>
   )
 }
+
+

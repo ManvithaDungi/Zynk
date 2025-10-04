@@ -19,26 +19,22 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
-  // Set up axios defaults
+  // Configure axios to send credentials with all requests
   useEffect(() => {
-    const token = localStorage.getItem("zynk_token")
-    if (token) {
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`
-    }
+    axios.defaults.withCredentials = true
   }, [])
 
   // Check if user is logged in on app start
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem("zynk_token")
-        if (token) {
-          const response = await axios.get("/api/auth/me")
-          setUser(response.data.user)
-        }
+        const response = await axios.get("/api/auth/me", {
+          withCredentials: true
+        })
+        setUser(response.data.user)
       } catch (error) {
-        localStorage.removeItem("zynk_token")
-        delete axios.defaults.headers.common["Authorization"]
+        // User not authenticated
+        setUser(null)
       } finally {
         setLoading(false)
       }
@@ -55,12 +51,11 @@ export const AuthProvider = ({ children }) => {
       const response = await axios.post("/api/auth/login", {
         email,
         password,
+      }, {
+        withCredentials: true
       })
 
-      const { token, user } = response.data
-
-      localStorage.setItem("zynk_token", token)
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`
+      const { user } = response.data
       setUser(user)
 
       return { success: true }
@@ -73,21 +68,26 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const register = async (name, email, password) => {
+  const register = async (username, email, password) => {
     try {
       setError("")
       setLoading(true)
 
       const response = await axios.post("/api/auth/register", {
-        name,
+        username,
         email,
         password,
       })
 
-      const { token, user } = response.data
+      // Registration successful, now login
+      const loginResponse = await axios.post("/api/auth/login", {
+        email,
+        password,
+      }, {
+        withCredentials: true
+      })
 
-      localStorage.setItem("zynk_token", token)
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`
+      const { user } = loginResponse.data
       setUser(user)
 
       return { success: true }
@@ -100,11 +100,17 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const logout = () => {
-    localStorage.removeItem("zynk_token")
-    delete axios.defaults.headers.common["Authorization"]
-    setUser(null)
-    setError("")
+  const logout = async () => {
+    try {
+      await axios.post("/api/auth/logout", {}, {
+        withCredentials: true
+      })
+    } catch (error) {
+      console.error("Logout error:", error)
+    } finally {
+      setUser(null)
+      setError("")
+    }
   }
 
   const value = {

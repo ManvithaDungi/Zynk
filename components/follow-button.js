@@ -1,17 +1,9 @@
-"use client"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { UserPlus, UserMinus } from "lucide-react"
 
-interface FollowButtonProps {
-  targetUserId: string
-  currentUserId: string
-  isFollowing: boolean
-}
-
-export function FollowButton({ targetUserId, currentUserId, isFollowing: initialIsFollowing }: FollowButtonProps) {
+export function FollowButton({ targetUserId, currentUserId, isFollowing: initialIsFollowing }) {
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing)
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
@@ -71,3 +63,5 @@ export function FollowButton({ targetUserId, currentUserId, isFollowing: initial
     </Button>
   )
 }
+
+

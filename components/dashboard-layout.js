@@ -1,6 +1,3 @@
-"use client"
-
-import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ZynkLogo } from "@/components/zynk-logo"
@@ -10,19 +7,12 @@ import { NotificationBell } from "@/components/notification-bell"
 import { UserMenu } from "@/components/user-menu"
 import { MobileNav } from "@/components/mobile-nav"
 import { Menu } from "lucide-react"
-import type { User } from "@/lib/auth"
 
-interface DashboardLayoutProps {
-  children: React.ReactNode
-  user: User
-}
-
-export function DashboardLayout({ children, user }: DashboardLayoutProps) {
+export function DashboardLayout({ children, user }) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-4">
@@ -44,17 +34,16 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
       </header>
 
       <div className="flex">
-        {/* Sidebar */}
         <aside className="hidden md:flex w-64 min-h-[calc(100vh-4rem)] border-r border-border/40 bg-card/30">
           <NavigationMenu user={user} />
         </aside>
 
-        {/* Main Content */}
         <main className="flex-1 min-h-[calc(100vh-4rem)]">{children}</main>
       </div>
 
-      {/* Mobile Navigation */}
       <MobileNav user={user} isOpen={isMobileNavOpen} onClose={() => setIsMobileNavOpen(false)} />
     </div>
   )
 }
+
+

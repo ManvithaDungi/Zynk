@@ -1,17 +1,9 @@
-"use client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { NavigationMenu } from "@/components/navigation-menu"
 import { SearchBar } from "@/components/search-bar"
-import type { User } from "@/lib/auth"
 
-interface MobileNavProps {
-  user: User
-  isOpen: boolean
-  onClose: () => void
-}
-
-export function MobileNav({ user, isOpen, onClose }: MobileNavProps) {
+export function MobileNav({ user, isOpen, onClose }) {
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent side="left" className="w-80">
@@ -33,3 +25,5 @@ export function MobileNav({ user, isOpen, onClose }: MobileNavProps) {
     </Sheet>
   )
 }
+
+

@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -7,34 +5,10 @@ import { CreatePostDialog } from "@/components/create-post-dialog"
 import { PostCard } from "@/components/post-card"
 import { TrendingUp, Users, Loader2 } from "lucide-react"
 
-interface Post {
-  id: string
-  content: string
-  images: string[]
-  author: {
-    id: string
-    username: string
-    avatar: string | null
-    isVerified: boolean
-  }
-  likes: string[]
-  comments: number
-  createdAt: Date
-  updatedAt: Date
-}
-
-interface FeedContentProps {
-  user?: {
-    userId: string
-    username: string
-    avatar?: string | null
-  }
-}
-
-export function FeedContent({ user }: FeedContentProps) {
-  const [posts, setPosts] = useState<Post[]>([])
+export function FeedContent({ user }) {
+  const [posts, setPosts] = useState([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     fetchPosts()
@@ -56,7 +30,7 @@ export function FeedContent({ user }: FeedContentProps) {
     }
   }
 
-  const handleDeletePost = (postId: string) => {
+  const handleDeletePost = (postId) => {
     setPosts((prev) => prev.filter((post) => post.id !== postId))
   }
 
@@ -85,7 +59,6 @@ export function FeedContent({ user }: FeedContentProps) {
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
-      {/* Create Post Section */}
       {user && (
         <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
           <CardContent className="p-6">
@@ -102,7 +75,6 @@ export function FeedContent({ user }: FeedContentProps) {
         </Card>
       )}
 
-      {/* Posts Feed */}
       {posts.length === 0 ? (
         <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
           <CardHeader>
@@ -135,3 +107,5 @@ export function FeedContent({ user }: FeedContentProps) {
     </div>
   )
 }
+
+

@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -12,32 +10,11 @@ import { FollowButton } from "@/components/follow-button"
 import { Settings, Calendar, Shield } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 
-interface ProfileUser {
-  id: string
-  username: string
-  email: string
-  avatar: string | null
-  bio: string
-  followers: string[]
-  following: string[]
-  postsCount: number
-  isVerified: boolean
-  isPrivate: boolean
-  createdAt: Date
-}
-
-interface ProfileContentProps {
-  profileUser: ProfileUser
-  isOwnProfile: boolean
-  currentUserId: string
-}
-
-export function ProfileContent({ profileUser, isOwnProfile, currentUserId }: ProfileContentProps) {
+export function ProfileContent({ profileUser, isOwnProfile, currentUserId }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
-      {/* Profile Header */}
       <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-6">
@@ -104,7 +81,6 @@ export function ProfileContent({ profileUser, isOwnProfile, currentUserId }: Pro
         </CardContent>
       </Card>
 
-      {/* Profile Tabs */}
       <Tabs defaultValue="posts" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="posts">Posts</TabsTrigger>
@@ -125,10 +101,11 @@ export function ProfileContent({ profileUser, isOwnProfile, currentUserId }: Pro
         </TabsContent>
       </Tabs>
 
-      {/* Edit Profile Dialog */}
       {isOwnProfile && (
         <EditProfileDialog user={profileUser} isOpen={isEditDialogOpen} onClose={() => setIsEditDialogOpen(false)} />
       )}
     </div>
   )
 }
+
+

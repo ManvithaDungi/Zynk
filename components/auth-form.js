@@ -1,8 +1,5 @@
-"use client"
-
-import type React from "react"
-
 import { useState } from "react"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,13 +13,13 @@ export function AuthForm() {
   const [showPassword, setShowPassword] = useState(false)
   const { toast } = useToast()
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
     setIsLoading(true)
 
     const formData = new FormData(e.currentTarget)
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
+    const email = formData.get("email")
+    const password = formData.get("password")
 
     try {
       const response = await fetch("/api/auth/login", {
@@ -38,7 +35,6 @@ export function AuthForm() {
           title: "Welcome back!",
           description: "You have been logged in successfully.",
         })
-        // Redirect to dashboard
         window.location.href = "/dashboard"
       } else {
         toast({
@@ -58,14 +54,14 @@ export function AuthForm() {
     }
   }
 
-  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleRegister = async (e) => {
     e.preventDefault()
     setIsLoading(true)
 
     const formData = new FormData(e.currentTarget)
-    const username = formData.get("username") as string
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
+    const username = formData.get("username")
+    const email = formData.get("email")
+    const password = formData.get("password")
 
     try {
       const response = await fetch("/api/auth/register", {
@@ -228,3 +224,5 @@ export function AuthForm() {
     </Card>
   )
 }
+
+

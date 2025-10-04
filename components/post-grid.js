@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -7,32 +5,10 @@ import { PostCard } from "./post-card"
 import { CreatePostDialog } from "./create-post-dialog"
 import { Plus, ImageIcon, Loader2 } from "lucide-react"
 
-interface Post {
-  id: string
-  content: string
-  images: string[]
-  author: {
-    id: string
-    username: string
-    avatar: string | null
-    isVerified: boolean
-  }
-  likes: string[]
-  comments: number
-  createdAt: Date
-  updatedAt: Date
-}
-
-interface PostGridProps {
-  userId: string
-  type: "posts" | "media" | "likes"
-  currentUserId?: string
-}
-
-export function PostGrid({ userId, type, currentUserId }: PostGridProps) {
-  const [posts, setPosts] = useState<Post[]>([])
+export function PostGrid({ userId, type, currentUserId }) {
+  const [posts, setPosts] = useState([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     fetchPosts()
@@ -54,7 +30,7 @@ export function PostGrid({ userId, type, currentUserId }: PostGridProps) {
     }
   }
 
-  const handleDeletePost = (postId: string) => {
+  const handleDeletePost = (postId) => {
     setPosts((prev) => prev.filter((post) => post.id !== postId))
   }
 
@@ -121,3 +97,5 @@ export function PostGrid({ userId, type, currentUserId }: PostGridProps) {
     </div>
   )
 }
+
+

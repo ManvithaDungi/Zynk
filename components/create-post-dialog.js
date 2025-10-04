@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -18,28 +18,21 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { ImageIcon, X, Plus } from "lucide-react"
 
-interface CreatePostDialogProps {
-  user: {
-    username: string
-    avatar?: string | null
-  }
-}
-
-export function CreatePostDialog({ user }: CreatePostDialogProps) {
+export function CreatePostDialog({ user }) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [content, setContent] = useState("")
-  const [images, setImages] = useState<string[]>([])
+  const [images, setImages] = useState([])
   const { toast } = useToast()
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e) => {
     const files = Array.from(e.target.files || [])
 
     files.forEach((file) => {
       if (file.type.startsWith("image/")) {
         const reader = new FileReader()
         reader.onload = (e) => {
-          const result = e.target?.result as string
+          const result = e.target?.result
           setImages((prev) => [...prev, result])
         }
         reader.readAsDataURL(file)
@@ -47,11 +40,11 @@ export function CreatePostDialog({ user }: CreatePostDialogProps) {
     })
   }
 
-  const removeImage = (index: number) => {
+  const removeImage = (index) => {
     setImages((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
     if (!content.trim() && images.length === 0) {
