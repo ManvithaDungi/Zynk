@@ -33,10 +33,14 @@ const eventSchema = new mongoose.Schema({
     maxlength: [300, 'Location cannot exceed 300 characters']
   },
   category: {
-    type: String,
-    enum: ["Conference", "Workshop", "Meetup", "Social", "Sports", "Arts", "Music", "Other"],
-    default: "Other"
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category',
+    required: [true, 'Category is required']
   },
+  tags: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Tag'
+  }],
   maxAttendees: {
     type: Number,
     required: [true, 'Max attendees is required'],
@@ -67,6 +71,43 @@ const eventSchema = new mongoose.Schema({
     type: String,
     enum: ['active', 'cancelled', 'completed'],
     default: 'active'
+  },
+  // New fields for enhanced features
+  isRecurring: {
+    type: Boolean,
+    default: false
+  },
+  recurringPattern: {
+    type: String,
+    enum: ['weekly', 'monthly', 'none'],
+    default: 'none'
+  },
+  recurringEndDate: {
+    type: Date
+  },
+  allowWaitlist: {
+    type: Boolean,
+    default: true
+  },
+  waitlistLimit: {
+    type: Number,
+    default: 50
+  },
+  allowChat: {
+    type: Boolean,
+    default: true
+  },
+  allowReviews: {
+    type: Boolean,
+    default: true
+  },
+  allowPolls: {
+    type: Boolean,
+    default: true
+  },
+  shareable: {
+    type: Boolean,
+    default: true
   }
 }, {
   timestamps: true
@@ -76,10 +117,25 @@ const eventSchema = new mongoose.Schema({
 eventSchema.index({ organizer: 1, createdAt: -1 });
 eventSchema.index({ date: 1, status: 1 });
 eventSchema.index({ category: 1 });
+eventSchema.index({ tags: 1 });
+eventSchema.index({ isRecurring: 1 });
+eventSchema.index({ status: 1, date: 1 });
 
 // Virtual for registration count
 eventSchema.virtual('registrationCount').get(function() {
   return this.registeredUsers.length;
+});
+
+// Virtual for average rating
+eventSchema.virtual('averageRating').get(function() {
+  // This will be populated by aggregation
+  return this._averageRating || 0;
+});
+
+// Virtual for total reviews
+eventSchema.virtual('totalReviews').get(function() {
+  // This will be populated by aggregation
+  return this._totalReviews || 0;
 });
 
 // Ensure virtual fields are serialized

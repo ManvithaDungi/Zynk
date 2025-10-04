@@ -53,6 +53,11 @@ export const eventsAPI = {
   delete: (id) => api.delete(`/api/events/${id}`),
   register: (id) => api.post(`/api/events/${id}/register`),
   unregister: (id) => api.post(`/api/events/${id}/unregister`),
+  // New enhanced features
+  joinWaitlist: (id) => api.post(`/api/events/${id}/waitlist`),
+  leaveWaitlist: (id) => api.delete(`/api/events/${id}/waitlist`),
+  getWaitlist: (id) => api.get(`/api/events/${id}/waitlist`),
+  createRecurring: (data) => api.post('/api/events/recurring', data),
 };
 
 // Users API
@@ -108,6 +113,48 @@ export const exploreAPI = {
   getTrendingPosts: (params = {}) => api.get('/api/explore/posts', { params }),
   getPopularUsers: (params = {}) => api.get('/api/explore/users', { params }),
   getRecommended: (params = {}) => api.get('/api/explore/recommended', { params }),
+};
+
+// Categories API
+export const categoriesAPI = {
+  getAll: () => api.get('/api/categories'),
+  getById: (id) => api.get(`/api/categories/${id}`),
+  create: (data) => api.post('/api/categories', data),
+  update: (id, data) => api.put(`/api/categories/${id}`, data),
+  delete: (id) => api.delete(`/api/categories/${id}`),
+};
+
+// Tags API
+export const tagsAPI = {
+  getAll: (params = {}) => api.get('/api/tags', { params }),
+  getPopular: (params = {}) => api.get('/api/tags/popular', { params }),
+  create: (data) => api.post('/api/tags', data),
+  updateUsage: (id, data) => api.put(`/api/tags/${id}/usage`, data),
+};
+
+// Reviews API
+export const reviewsAPI = {
+  getByEvent: (eventId, params = {}) => api.get(`/api/reviews/event/${eventId}`, { params }),
+  getUserReview: (eventId) => api.get(`/api/reviews/event/${eventId}/user`),
+  create: (eventId, data) => api.post(`/api/reviews/event/${eventId}`, data),
+  markHelpful: (reviewId, data) => api.post(`/api/reviews/${reviewId}/helpful`, data),
+  delete: (reviewId) => api.delete(`/api/reviews/${reviewId}`),
+};
+
+// Polls API
+export const pollsAPI = {
+  getByEvent: (eventId) => api.get(`/api/polls/event/${eventId}`),
+  create: (data) => api.post('/api/polls', data),
+  vote: (pollId, data) => api.post(`/api/polls/${pollId}/vote`, data),
+  update: (pollId, data) => api.put(`/api/polls/${pollId}`, data),
+  delete: (pollId) => api.delete(`/api/polls/${pollId}`),
+};
+
+// Chat API
+export const chatAPI = {
+  getMessages: (eventId, params = {}) => api.get(`/api/chat/event/${eventId}`, { params }),
+  sendMessage: (eventId, data) => api.post(`/api/chat/event/${eventId}`, data),
+  deleteMessage: (messageId) => api.delete(`/api/chat/messages/${messageId}`),
 };
 
 export default api;

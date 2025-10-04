@@ -1,7 +1,10 @@
+import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { Suspense, lazy } from "react";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { SocketProvider } from "./context/SocketContext";
+import "./App.css";
 
-// Lazy load components for better performance
+// Lazy load components
 const Login = lazy(() => import("./pages/Login/Login"));
 const Home = lazy(() => import("./pages/Home/Home"));
 const UpcomingEvents = lazy(() => import("./pages/UpcomingEvents/UpcomingEvents"));
@@ -10,95 +13,55 @@ const EventDetail = lazy(() => import("./pages/EventDetail/EventDetail"));
 const Admin = lazy(() => import("./pages/Admin/Admin"));
 const Albums = lazy(() => import("./pages/Albums/Albums"));
 
-import { AuthProvider, useAuth } from "./context/AuthContext";
-import "./App.css";
-
-// Loading component for Suspense fallback
-const LoadingSpinner = () => (
-  <div className="loading-container">
-    <div className="loading-spinner"></div>
-    <p>Loading...</p>
-  </div>
-);
-
-// Protected route component
-const ProtectedRoute = ({ children }) => {
+// PrivateRoute component to protect routes
+const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  
-  if (loading) return <LoadingSpinner />;
+
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading application...</p>
+      </div>
+    );
+  }
+
   return user ? children : <Navigate to="/login" replace />;
 };
 
-// Public route component (redirects if already logged in)
-const PublicRoute = ({ children }) => {
-  const { user, loading } = useAuth();
-  
-  if (loading) return <LoadingSpinner />;
-  return user ? <Navigate to="/home" replace /> : children;
-};
-
 function AppRoutes() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading user session...</p>
+      </div>
+    );
+  }
+
   return (
-    <Suspense fallback={<LoadingSpinner />}>
+    <Suspense
+      fallback={
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading page...</p>
+        </div>
+      }
+    >
       <Routes>
-        <Route 
-          path="/login" 
-          element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          } 
-        />
-        <Route 
-          path="/home" 
-          element={
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/upcoming-events" 
-          element={
-            <ProtectedRoute>
-              <UpcomingEvents />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/create-event" 
-          element={
-            <ProtectedRoute>
-              <CreateEvent />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/event/:id" 
-          element={
-            <ProtectedRoute>
-              <EventDetail />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin" 
-          element={
-            <ProtectedRoute>
-              <Admin />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/albums" 
-          element={
-            <ProtectedRoute>
-              <Albums />
-            </ProtectedRoute>
-          } 
-        />
-        <Route path="/" element={<Navigate to="/home" replace />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/login" element={user ? <Navigate to="/home" replace /> : <Login />} />
+        <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
+        <Route path="/upcoming-events" element={<PrivateRoute><UpcomingEvents /></PrivateRoute>} />
+        <Route path="/create-event" element={<PrivateRoute><CreateEvent /></PrivateRoute>} />
+        <Route path="/event/:id" element={<PrivateRoute><EventDetail /></PrivateRoute>} />
+        <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
+        <Route path="/albums" element={<PrivateRoute><Albums /></PrivateRoute>} />
+
+        <Route path="/" element={<Navigate to={user ? "/home" : "/login"} replace />} />
+        {/* Catch-all route for 404 - redirects to home or login */}
+        <Route path="*" element={<Navigate to={user ? "/home" : "/login"} replace />} />
       </Routes>
     </Suspense>
   );
@@ -107,11 +70,13 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <div className="app">
-          <AppRoutes />
-        </div>
-      </Router>
+      <SocketProvider>
+        <Router>
+          <div className="app">
+            <AppRoutes />
+          </div>
+        </Router>
+      </SocketProvider>
     </AuthProvider>
   );
 }

@@ -5,6 +5,11 @@ import { eventsAPI } from "../../utils/api";
 import "./EventDetail.css";
 import AlbumManager from "../../components/AlbumManager/AlbumManager";
 import MemoryViewer from "../../components/MemoryViewer/MemoryViewer";
+import RatingReview from "../../components/RatingReview/RatingReview";
+import EventChat from "../../components/EventChat/EventChat";
+import EventPoll from "../../components/EventPoll/EventPoll";
+import EventWaitlist from "../../components/EventWaitlist/EventWaitlist";
+import EventShare from "../../components/EventShare/EventShare";
 import { useAuth } from "../../context/AuthContext";
 
 const EventDetail = () => {
@@ -22,6 +27,10 @@ const EventDetail = () => {
     dietaryRestrictions: "",
   });
   const [selectedAlbum, setSelectedAlbum] = useState(null);
+  
+  // New state for enhanced features
+  const [activeTab, setActiveTab] = useState("details");
+  const [showChat, setShowChat] = useState(false);
 
   // Fetch event details
   const fetchEventDetail = useCallback(async () => {
@@ -48,86 +57,74 @@ const EventDetail = () => {
     try {
       setRegistering(true);
       await eventsAPI.register(id);
-
-      setEvent((prev) => ({
-        ...prev,
-        isRegistered: true,
-        registrationCount: prev.registrationCount + 1,
-      }));
-
+      await fetchEventDetail(); // Refresh event data
       setShowRegistrationForm(false);
-      alert("Successfully registered for event!");
     } catch (error) {
-      console.error("Registration error:", error);
-      alert(error.response?.data?.message || "Failed to register for event");
+      console.error("Error registering for event:", error);
+      alert("Failed to register for event");
     } finally {
       setRegistering(false);
     }
-  }, [id]);
+  }, [id, fetchEventDetail]);
 
   // Handle event unregistration
   const handleUnregister = useCallback(async () => {
-    if (!window.confirm("Are you sure you want to unregister from this event?")) {
-      return;
-    }
-
     try {
-      setRegistering(true);
       await eventsAPI.unregister(id);
-
-      setEvent((prev) => ({
-        ...prev,
-        isRegistered: false,
-        registrationCount: prev.registrationCount > 0 ? prev.registrationCount - 1 : 0,
-      }));
-
-      alert("Successfully unregistered from event!");
+      await fetchEventDetail(); // Refresh event data
     } catch (error) {
-      console.error("Unregistration error:", error);
-      alert(error.response?.data?.message || "Failed to unregister from event");
-    } finally {
-      setRegistering(false);
+      console.error("Error unregistering from event:", error);
+      alert("Failed to unregister from event");
     }
-  }, [id]);
+  }, [id, fetchEventDetail]);
 
-  // Memoized date formatting
-  const formatDate = useCallback((dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
+  // Handle registration form input changes
+  const handleRegistrationInputChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setRegistrationData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  }, []);
+
+  // Format date and time
+  const formatEventDateTime = useCallback((date, time) => {
+    const eventDate = new Date(date);
+    const formattedDate = eventDate.toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
     });
+    return `${formattedDate} at ${time}`;
   }, []);
 
-  // Memoized event image URL
-  const eventImageUrl = useMemo(() => {
-    if (!event) return "/placeholder.svg";
-    
-    return event.thumbnail?.url || 
-           (event.eventImage && typeof event.eventImage === "string" ? event.eventImage : null) ||
-           "/placeholder.svg";
-  }, [event]);
+  // Check if user is registered
+  const isUserRegistered = useMemo(() => {
+    return event?.registeredUsers?.includes(user?.id) || false;
+  }, [event?.registeredUsers, user?.id]);
 
-  // Album selection handlers
-  const handleAlbumSelect = useCallback((album) => {
-    setSelectedAlbum(album);
-  }, []);
+  // Check if user is the organizer
+  const isUserOrganizer = useMemo(() => {
+    return event?.organizer?.id === user?.id || false;
+  }, [event?.organizer?.id, user?.id]);
 
-  const handleBackToAlbums = useCallback(() => {
-    setSelectedAlbum(null);
-  }, []);
+  // Check if event has ended
+  const hasEventEnded = useMemo(() => {
+    if (!event?.date) return false;
+    return new Date(event.date) < new Date();
+  }, [event?.date]);
 
-  // Registration form handlers
-  const handleRegistrationInputChange = useCallback((field, value) => {
-    setRegistrationData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  }, []);
+  // Check if user can review (registered and event has ended)
+  const canUserReview = useMemo(() => {
+    return isUserRegistered && hasEventEnded;
+  }, [isUserRegistered, hasEventEnded]);
 
-  // Loading state
+  // Check if user can create polls (organizer)
+  const canCreatePolls = useMemo(() => {
+    return isUserOrganizer;
+  }, [isUserOrganizer]);
+
   if (loading) {
     return (
       <div className="event-detail-page">
@@ -140,15 +137,15 @@ const EventDetail = () => {
     );
   }
 
-  // Error state
   if (error || !event) {
     return (
       <div className="event-detail-page">
         <Navbar />
         <div className="error-container">
-          <p className="error-message">{error || "Event not found"}</p>
-          <button onClick={() => navigate("/upcoming-events")} className="btn btn-secondary">
-            Back to Events
+          <h2>Event Not Found</h2>
+          <p>{error || "The event you're looking for doesn't exist."}</p>
+          <button onClick={() => navigate("/home")} className="btn btn-primary">
+            Go Home
           </button>
         </div>
       </div>
@@ -158,119 +155,263 @@ const EventDetail = () => {
   return (
     <div className="event-detail-page">
       <Navbar />
-
+      
       <div className="event-detail-container">
+        {/* Event Header */}
         <div className="event-header">
-          <button onClick={() => navigate(-1)} className="back-btn">
-            ← Back
-          </button>
-
-          <div className="event-hero">
-            {eventImageUrl && eventImageUrl !== "/placeholder.svg" ? (
-              <img src={eventImageUrl} alt={event.title} className="event-hero-image" loading="lazy" />
+          <div className="event-image-section">
+            {event.thumbnail?.url || event.eventImage ? (
+              <img
+                src={event.thumbnail?.url || event.eventImage}
+                alt={event.title}
+                className="event-image"
+              />
             ) : (
-              <div className="event-hero-placeholder">📅</div>
-            )}
-
-            <div className="event-hero-content">
-              <div className="event-category-badge">{event.category}</div>
-              <h1>{event.title}</h1>
-              <p className="event-description">{event.description}</p>
-
-              <div className="event-meta">
-                <div className="event-meta-item">
-                  <strong>📅 Date:</strong> {formatDate(event.date)}
-                </div>
-                <div className="event-meta-item">
-                  <strong>🕒 Time:</strong> {event.time}
-                </div>
-                <div className="event-meta-item">
-                  <strong>📍 Location:</strong> {event.location}
-                </div>
-                <div className="event-meta-item">
-                  <strong>👤 Host:</strong> {event.organizer?.name || 'Unknown'}
-                </div>
-                <div className="event-meta-item">
-                  <strong>👥 Registered:</strong> {event.registrationCount} / {event.maxAttendees}
-                </div>
+              <div className="event-image-placeholder">
+                <span className="placeholder-icon">📅</span>
               </div>
+            )}
+          </div>
+          
+          <div className="event-info">
+            <div className="event-meta">
+              <span className="event-category">{event.category?.name || event.category}</span>
+              {event.tags && event.tags.length > 0 && (
+                <div className="event-tags">
+                  {event.tags.map(tag => (
+                    <span key={tag.id || tag} className="event-tag">
+                      #{tag.name || tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <h1 className="event-title">{event.title}</h1>
+            <p className="event-description">{event.description}</p>
+            
+            <div className="event-details">
+              <div className="detail-item">
+                <span className="detail-icon">📅</span>
+                <span className="detail-text">{formatEventDateTime(event.date, event.time)}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-icon">📍</span>
+                <span className="detail-text">{event.location}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-icon">👤</span>
+                <span className="detail-text">Hosted by {event.organizer?.name || "Unknown"}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-icon">👥</span>
+                <span className="detail-text">
+                  {event.registrationCount} / {event.maxAttendees} attendees
+                </span>
+              </div>
+            </div>
+
+            {/* Event Actions */}
+            <div className="event-actions">
+              {!isUserRegistered ? (
+                <button
+                  className="btn btn-primary"
+                  onClick={() => setShowRegistrationForm(true)}
+                  disabled={event.registrationCount >= event.maxAttendees}
+                >
+                  {event.registrationCount >= event.maxAttendees ? "Event Full" : "Register"}
+                </button>
+              ) : (
+                <button
+                  className="btn btn-secondary"
+                  onClick={handleUnregister}
+                >
+                  Unregister
+                </button>
+              )}
+              
+              {event.shareable && (
+                <EventShare event={event} />
+              )}
+              
+              {event.allowChat && isUserRegistered && (
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setShowChat(true)}
+                >
+                  💬 Chat
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="event-actions">
-          {event.isRegistered ? (
-            <button 
-              onClick={handleUnregister} 
-              disabled={registering} 
-              className="btn btn-danger"
-            >
-              {registering ? "Unregistering..." : "Unregister"}
-            </button>
-          ) : (
+        {/* Event Tabs */}
+        <div className="event-tabs">
+          <button
+            className={`tab-button ${activeTab === "details" ? "active" : ""}`}
+            onClick={() => setActiveTab("details")}
+          >
+            📋 Details
+          </button>
+          {event.allowReviews && (
             <button
-              onClick={() => setShowRegistrationForm(true)}
-              disabled={registering || event.registrationCount >= event.maxAttendees}
-              className="btn btn-primary"
+              className={`tab-button ${activeTab === "reviews" ? "active" : ""}`}
+              onClick={() => setActiveTab("reviews")}
             >
-              {event.registrationCount >= event.maxAttendees ? "Event Full" : "Register for Event"}
+              ⭐ Reviews
             </button>
+          )}
+          {event.allowPolls && (
+            <button
+              className={`tab-button ${activeTab === "polls" ? "active" : ""}`}
+              onClick={() => setActiveTab("polls")}
+            >
+              📊 Polls
+            </button>
+          )}
+          <button
+            className={`tab-button ${activeTab === "memories" ? "active" : ""}`}
+            onClick={() => setActiveTab("memories")}
+          >
+            📸 Memories
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        <div className="event-content">
+          {activeTab === "details" && (
+            <div className="tab-content">
+              {/* Waitlist */}
+              {event.allowWaitlist && (
+                <EventWaitlist 
+                  event={event} 
+                  onRegistrationChange={fetchEventDetail}
+                />
+              )}
+
+              {/* Additional Event Information */}
+              <div className="event-additional-info">
+                <h3>Event Information</h3>
+                <div className="info-grid">
+                  <div className="info-item">
+                    <strong>Category:</strong> {event.category?.name || event.category}
+                  </div>
+                  <div className="info-item">
+                    <strong>Maximum Attendees:</strong> {event.maxAttendees}
+                  </div>
+                  <div className="info-item">
+                    <strong>Current Registrations:</strong> {event.registrationCount}
+                  </div>
+                  {event.isRecurring && (
+                    <div className="info-item">
+                      <strong>Recurring:</strong> {event.recurringPattern}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "reviews" && event.allowReviews && (
+            <div className="tab-content">
+              <RatingReview 
+                eventId={event.id} 
+                canReview={canUserReview}
+              />
+            </div>
+          )}
+
+          {activeTab === "polls" && event.allowPolls && (
+            <div className="tab-content">
+              <EventPoll 
+                eventId={event.id} 
+                canCreatePoll={canCreatePolls}
+              />
+            </div>
+          )}
+
+          {activeTab === "memories" && (
+            <div className="tab-content">
+              <AlbumManager 
+                eventId={event.id}
+                onAlbumSelect={setSelectedAlbum}
+              />
+              {selectedAlbum && (
+                <MemoryViewer 
+                  albumId={selectedAlbum.id}
+                  onClose={() => setSelectedAlbum(null)}
+                />
+              )}
+            </div>
           )}
         </div>
 
+        {/* Registration Modal */}
         {showRegistrationForm && (
-          <div className="registration-modal">
-            <div className="registration-form-container">
-              <h2>Register for {event.title}</h2>
-
-              <form onSubmit={handleRegister} className="registration-form">
+          <div className="modal-overlay" onClick={() => setShowRegistrationForm(false)}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+              <h3>Register for Event</h3>
+              <form onSubmit={handleRegister}>
                 <div className="form-group">
-                  <label htmlFor="specialRequests">Special Requests (Optional)</label>
+                  <label htmlFor="specialRequests" className="form-label">
+                    Special Requests
+                  </label>
                   <textarea
                     id="specialRequests"
+                    name="specialRequests"
                     value={registrationData.specialRequests}
-                    onChange={(e) => handleRegistrationInputChange('specialRequests', e.target.value)}
-                    placeholder="Any special accommodations needed?"
+                    onChange={handleRegistrationInputChange}
+                    className="form-textarea"
                     rows="3"
+                    placeholder="Any special requests or accommodations needed..."
                   />
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="emergencyContact">Emergency Contact (Optional)</label>
+                  <label htmlFor="emergencyContact" className="form-label">
+                    Emergency Contact
+                  </label>
                   <input
                     type="text"
                     id="emergencyContact"
+                    name="emergencyContact"
                     value={registrationData.emergencyContact}
-                    onChange={(e) => handleRegistrationInputChange('emergencyContact', e.target.value)}
+                    onChange={handleRegistrationInputChange}
+                    className="form-input"
                     placeholder="Emergency contact name and phone"
                   />
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="dietaryRestrictions">Dietary Restrictions (Optional)</label>
+                  <label htmlFor="dietaryRestrictions" className="form-label">
+                    Dietary Restrictions
+                  </label>
                   <input
                     type="text"
                     id="dietaryRestrictions"
+                    name="dietaryRestrictions"
                     value={registrationData.dietaryRestrictions}
-                    onChange={(e) => handleRegistrationInputChange('dietaryRestrictions', e.target.value)}
-                    placeholder="Any dietary restrictions or allergies"
+                    onChange={handleRegistrationInputChange}
+                    className="form-input"
+                    placeholder="Any dietary restrictions or allergies..."
                   />
                 </div>
 
                 <div className="form-actions">
-                  <button 
-                    type="button" 
-                    onClick={() => setShowRegistrationForm(false)} 
+                  <button
+                    type="button"
+                    onClick={() => setShowRegistrationForm(false)}
                     className="btn btn-secondary"
                   >
                     Cancel
                   </button>
-                  <button 
-                    type="submit" 
-                    disabled={registering} 
+                  <button
+                    type="submit"
+                    disabled={registering}
                     className="btn btn-primary"
                   >
-                    {registering ? "Registering..." : "Confirm Registration"}
+                    {registering ? "Registering..." : "Register"}
                   </button>
                 </div>
               </form>
@@ -278,49 +419,14 @@ const EventDetail = () => {
           </div>
         )}
 
-        <div className="event-content">
-          <div className="event-section">
-            <h2>Event Details</h2>
-            <div className="event-details-grid">
-              <div className="detail-item">
-                <h3>About This Event</h3>
-                <p>{event.description}</p>
-              </div>
-
-              <div className="detail-item">
-                <h3>Event Statistics</h3>
-                <div className="stats-grid">
-                  <div className="stat">
-                    <span className="stat-number">{event.registrationCount}</span>
-                    <span className="stat-label">Registered</span>
-                  </div>
-                  <div className="stat">
-                    <span className="stat-number">{event.likesCount ?? 0}</span>
-                    <span className="stat-label">Likes</span>
-                  </div>
-                  <div className="stat">
-                    <span className="stat-number">{event.albums?.length || 0}</span>
-                    <span className="stat-label">Albums</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {selectedAlbum ? (
-            <MemoryViewer 
-              album={selectedAlbum} 
-              onBack={handleBackToAlbums} 
-              isRegistered={event.isRegistered} 
-            />
-          ) : (
-            <AlbumManager 
-              eventId={event.id} 
-              isRegistered={event.isRegistered} 
-              onAlbumSelect={handleAlbumSelect} 
-            />
-          )}
-        </div>
+        {/* Chat Modal */}
+        {showChat && (
+          <EventChat
+            eventId={event.id}
+            isOpen={showChat}
+            onClose={() => setShowChat(false)}
+          />
+        )}
       </div>
     </div>
   );

@@ -5,6 +5,9 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const path = require("path");
+const http = require("http");
+const socketIo = require("socket.io");
+const jwt = require("jsonwebtoken");
 
 // Import routes
 const authRoutes = require("./routes/authRoutes");
@@ -14,8 +17,22 @@ const albumRoutes = require("./routes/albumRoutes");
 const postsRoutes = require("./routes/postsRoutes");
 const exploreRoutes = require("./routes/exploreRoutes");
 const searchRoutes = require("./routes/searchRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
+const tagRoutes = require("./routes/tagRoutes");
+const reviewRoutes = require("./routes/reviewRoutes");
+const pollRoutes = require("./routes/pollRoutes");
+const chatRoutes = require("./routes/chatRoutes");
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIo(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || "*",
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 
 // Trust proxy for rate limiting
@@ -33,14 +50,11 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Serve static files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// MongoDB connection with optimized settings
-const mongoUri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/zynk?ssl=false";
+// MongoDB connection with optimized settings - Force local connection
+const mongoUri = "mongodb://127.0.0.1:27017/zynk";
+console.log('🔗 Connecting to local MongoDB:', mongoUri);
+
 mongoose.connect(mongoUri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  ssl: false,
-  tls: false,
-  tlsInsecure: true,
   maxPoolSize: 10,
   serverSelectionTimeoutMS: 5000,
   socketTimeoutMS: 45000,
@@ -54,6 +68,89 @@ mongoose.connection.on("error", (err) => {
   console.error("❌ MongoDB connection error:", err.message);
 });
 
+// Socket.io authentication middleware
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return next(new Error('Authentication error'));
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.userId = decoded.userId;
+    socket.userName = decoded.username;
+    next();
+  } catch (err) {
+    next(new Error('Authentication error'));
+  }
+});
+
+// Socket.io connection handling
+io.on('connection', (socket) => {
+  console.log(`User ${socket.userName} connected`);
+
+  // Join event room
+  socket.on('join-event', (eventId) => {
+    socket.join(`event-${eventId}`);
+    console.log(`User ${socket.userName} joined event ${eventId}`);
+  });
+
+  // Leave event room
+  socket.on('leave-event', (eventId) => {
+    socket.leave(`event-${eventId}`);
+    console.log(`User ${socket.userName} left event ${eventId}`);
+  });
+
+  // Handle chat messages
+  socket.on('send-message', async (data) => {
+    try {
+      const { eventId, message, messageType = 'text' } = data;
+      
+      // Save message to database
+      const ChatMessage = require('./models/ChatMessage');
+      const newMessage = new ChatMessage({
+        event: eventId,
+        user: socket.userId,
+        message: message,
+        messageType: messageType
+      });
+      
+      await newMessage.save();
+      await newMessage.populate('user', 'name email avatar');
+
+      // Broadcast message to event room
+      io.to(`event-${eventId}`).emit('new-message', {
+        id: newMessage._id,
+        message: newMessage.message,
+        messageType: newMessage.messageType,
+        user: {
+          id: newMessage.user._id,
+          name: newMessage.user.name,
+          avatar: newMessage.user.avatar
+        },
+        createdAt: newMessage.createdAt
+      });
+    } catch (error) {
+      console.error('Error sending message:', error);
+      socket.emit('error', { message: 'Failed to send message' });
+    }
+  });
+
+  // Handle typing indicators
+  socket.on('typing', (data) => {
+    socket.to(`event-${data.eventId}`).emit('user-typing', {
+      userId: socket.userId,
+      userName: socket.userName,
+      isTyping: data.isTyping
+    });
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`User ${socket.userName} disconnected`);
+  });
+});
+
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
@@ -62,6 +159,11 @@ app.use("/api/albums", albumRoutes);
 app.use("/api/posts", postsRoutes);
 app.use("/api/explore", exploreRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/tags", tagRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/polls", pollRoutes);
+app.use("/api/chat", chatRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {
@@ -90,8 +192,10 @@ app.use("*", (req, res) => {
 const gracefulShutdown = async () => {
   try {
     await mongoose.disconnect();
-    console.log("✅ MongoDB disconnected. Server shutting down.");
-    process.exit(0);
+    server.close(() => {
+      console.log("✅ MongoDB disconnected. Server shutting down.");
+      process.exit(0);
+    });
   } catch (error) {
     console.error("❌ Error during shutdown:", error);
     process.exit(1);
@@ -101,8 +205,8 @@ const gracefulShutdown = async () => {
 process.on("SIGINT", gracefulShutdown);
 process.on("SIGTERM", gracefulShutdown);
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
 
-module.exports = app;
+module.exports = { app, server, io };

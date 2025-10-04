@@ -1,177 +1,250 @@
-import { useState, useEffect } from "react"
-import { useAuth } from "../../context/AuthContext"
-import Navbar from "../../components/Navbar/Navbar"
-import axios from "axios"
-import "./Albums.css"
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useAuth } from "../../context/AuthContext";
+import Navbar from "../../components/Navbar/Navbar";
+import { albumsAPI, postsAPI } from "../../utils/api";
+import "./Albums.css";
 
 const Albums = () => {
-  const { user } = useAuth()
-  const [albums, setAlbums] = useState([])
-  const [selectedAlbum, setSelectedAlbum] = useState(null)
-  const [posts, setPosts] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [showCreateAlbum, setShowCreateAlbum] = useState(false)
-  const [showCreatePost, setShowCreatePost] = useState(false)
-  const [newAlbumName, setNewAlbumName] = useState("")
-  const [newAlbumDescription, setNewAlbumDescription] = useState("")
+  const { user } = useAuth();
+  const [albums, setAlbums] = useState([]);
+  const [selectedAlbum, setSelectedAlbum] = useState(null);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateAlbum, setShowCreateAlbum] = useState(false);
+  const [showCreatePost, setShowCreatePost] = useState(false);
+  const [newAlbumName, setNewAlbumName] = useState("");
+  const [newAlbumDescription, setNewAlbumDescription] = useState("");
   
   // Post creation states
-  const [postCaption, setPostCaption] = useState("")
-  const [mediaFiles, setMediaFiles] = useState([])
-  const [mediaPreviews, setMediaPreviews] = useState([])
-  const [captureMode, setCaptureMode] = useState(false)
-  const [stream, setStream] = useState(null)
+  const [postCaption, setPostCaption] = useState("");
+  const [mediaFiles, setMediaFiles] = useState([]);
+  const [mediaPreviews, setMediaPreviews] = useState([]);
+  const [captureMode, setCaptureMode] = useState(false);
+  const [stream, setStream] = useState(null);
 
-  useEffect(() => {
-    fetchAlbums()
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop())
-      }
-    }
-  }, [])
-
-  useEffect(() => {
-    if (selectedAlbum) {
-      fetchPosts(selectedAlbum.id)
-    }
-  }, [selectedAlbum])
-
-  const fetchAlbums = async () => {
+  // Fetch albums
+  const fetchAlbums = useCallback(async () => {
     try {
-      setLoading(true)
-      const response = await axios.get("/api/albums")
-      setAlbums(response.data.albums)
+      setLoading(true);
+      const response = await albumsAPI.getAll();
+      setAlbums(response.data.albums || []);
     } catch (error) {
-      console.error("Error fetching albums:", error)
+      console.error("Error fetching albums:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  }, []);
 
-  const fetchPosts = async (albumId) => {
+  // Fetch posts for selected album
+  const fetchPosts = useCallback(async (albumId) => {
     try {
-      const response = await axios.get(`/api/albums/${albumId}/posts`)
-      setPosts(response.data.posts)
+      const response = await albumsAPI.getPosts(albumId);
+      setPosts(response.data.posts || []);
     } catch (error) {
-      console.error("Error fetching posts:", error)
+      console.error("Error fetching posts:", error);
     }
-  }
+  }, []);
 
-  const createAlbum = async (e) => {
-    e.preventDefault()
+  // Create new album
+  const createAlbum = useCallback(async (e) => {
+    e.preventDefault();
     try {
-      const response = await axios.post("/api/albums", {
+      const response = await albumsAPI.create({
         name: newAlbumName,
         description: newAlbumDescription
-      })
-      setAlbums([response.data.album, ...albums])
-      setNewAlbumName("")
-      setNewAlbumDescription("")
-      setShowCreateAlbum(false)
+      });
+      setAlbums([response.data.album, ...albums]);
+      setNewAlbumName("");
+      setNewAlbumDescription("");
+      setShowCreateAlbum(false);
     } catch (error) {
-      console.error("Error creating album:", error)
-      alert("Failed to create album")
+      console.error("Error creating album:", error);
+      alert("Failed to create album");
     }
-  }
+  }, [newAlbumName, newAlbumDescription, albums]);
 
-  const handleFileSelect = (e) => {
-    const files = Array.from(e.target.files)
-    setMediaFiles([...mediaFiles, ...files])
+  // Handle file selection
+  const handleFileSelect = useCallback((e) => {
+    const files = Array.from(e.target.files);
+    setMediaFiles(prev => [...prev, ...files]);
     
-    const newPreviews = files.map(file => URL.createObjectURL(file))
-    setMediaPreviews([...mediaPreviews, ...newPreviews])
-  }
+    const newPreviews = files.map(file => URL.createObjectURL(file));
+    setMediaPreviews(prev => [...prev, ...newPreviews]);
+  }, []);
 
-  const removeMedia = (index) => {
-    const newFiles = mediaFiles.filter((_, i) => i !== index)
-    const newPreviews = mediaPreviews.filter((_, i) => i !== index)
-    URL.revokeObjectURL(mediaPreviews[index])
-    setMediaFiles(newFiles)
-    setMediaPreviews(newPreviews)
-  }
+  // Remove media file
+  const removeMedia = useCallback((index) => {
+    setMediaFiles(prev => prev.filter((_, i) => i !== index));
+    setMediaPreviews(prev => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
+  }, []);
 
-  const startCapture = async () => {
+  // Start camera capture
+  const startCapture = useCallback(async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: true, 
         audio: false 
-      })
-      setStream(mediaStream)
-      setCaptureMode(true)
+      });
+      setStream(mediaStream);
+      setCaptureMode(true);
     } catch (error) {
-      console.error("Error accessing camera:", error)
-      alert("Failed to access camera")
+      console.error("Error accessing camera:", error);
+      alert("Failed to access camera");
     }
-  }
+  }, []);
 
-  const capturePhoto = () => {
-    if (!stream) return
+  // Capture photo from camera
+  const capturePhoto = useCallback(() => {
+    if (!stream) return;
     
-    const video = document.getElementById("camera-preview")
-    const canvas = document.createElement("canvas")
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    canvas.getContext("2d").drawImage(video, 0, 0)
+    const video = document.getElementById("camera-preview");
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(video, 0, 0);
     
     canvas.toBlob((blob) => {
-      const file = new File([blob], `capture-${Date.now()}.jpg`, { type: "image/jpeg" })
-      setMediaFiles([...mediaFiles, file])
-      setMediaPreviews([...mediaPreviews, URL.createObjectURL(file)])
-    }, "image/jpeg")
-  }
+      const file = new File([blob], `capture-${Date.now()}.jpg`, { type: "image/jpeg" });
+      setMediaFiles(prev => [...prev, file]);
+      setMediaPreviews(prev => [...prev, URL.createObjectURL(file)]);
+    }, "image/jpeg");
+  }, [stream]);
 
-  const stopCapture = () => {
+  // Stop camera capture
+  const stopCapture = useCallback(() => {
     if (stream) {
-      stream.getTracks().forEach(track => track.stop())
-      setStream(null)
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
     }
-    setCaptureMode(false)
-  }
+    setCaptureMode(false);
+  }, [stream]);
 
-  const createPost = async (e) => {
-    e.preventDefault()
+  // Create new post
+  const createPost = useCallback(async (e) => {
+    e.preventDefault();
     if (!selectedAlbum) {
-      alert("Please select an album first")
-      return
+      alert("Please select an album first");
+      return;
     }
 
     try {
-      const formData = new FormData()
-      formData.append("albumId", selectedAlbum.id)
-      formData.append("caption", postCaption)
-      mediaFiles.forEach((file) => {
-        formData.append("media", file)
-      })
+      const mediaData = mediaFiles.map(file => ({
+        url: URL.createObjectURL(file), // This should be handled by backend
+        type: file.type.startsWith('image/') ? 'image' : 'video',
+        filename: file.name
+      }));
 
-      const response = await axios.post("/api/posts", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      })
+      const response = await postsAPI.create({
+        caption: postCaption,
+        album: selectedAlbum.id,
+        media: mediaData
+      });
 
-      setPosts([response.data.post, ...posts])
-      setPostCaption("")
-      setMediaFiles([])
-      mediaPreviews.forEach(url => URL.revokeObjectURL(url))
-      setMediaPreviews([])
-      setShowCreatePost(false)
-      stopCapture()
+      setPosts(prev => [response.data.post, ...prev]);
+      setPostCaption("");
+      setMediaFiles([]);
+      mediaPreviews.forEach(url => URL.revokeObjectURL(url));
+      setMediaPreviews([]);
+      setShowCreatePost(false);
+      stopCapture();
     } catch (error) {
-      console.error("Error creating post:", error)
-      alert("Failed to create post")
+      console.error("Error creating post:", error);
+      alert("Failed to create post");
     }
-  }
+  }, [selectedAlbum, postCaption, mediaFiles, mediaPreviews, stopCapture]);
 
-  const deletePost = async (postId) => {
-    if (!window.confirm("Are you sure you want to delete this post?")) return
+  // Delete post
+  const deletePost = useCallback(async (postId) => {
+    if (!window.confirm("Are you sure you want to delete this post?")) return;
     
     try {
-      await axios.delete(`/api/posts/${postId}`)
-      setPosts(posts.filter(post => post.id !== postId))
+      await postsAPI.delete(postId);
+      setPosts(prev => prev.filter(post => post.id !== postId));
     } catch (error) {
-      console.error("Error deleting post:", error)
-      alert("Failed to delete post")
+      console.error("Error deleting post:", error);
+      alert("Failed to delete post");
     }
-  }
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      // Cleanup media preview URLs
+      mediaPreviews.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [stream, mediaPreviews]);
+
+  // Fetch albums on mount
+  useEffect(() => {
+    fetchAlbums();
+  }, [fetchAlbums]);
+
+  // Fetch posts when album is selected
+  useEffect(() => {
+    if (selectedAlbum) {
+      fetchPosts(selectedAlbum.id);
+    }
+  }, [selectedAlbum, fetchPosts]);
+
+  // Memoized album list
+  const albumList = useMemo(() => (
+    <div className="albums-list">
+      {albums.map(album => (
+        <div
+          key={album.id}
+          className={`album-item ${selectedAlbum?.id === album.id ? "active" : ""}`}
+          onClick={() => setSelectedAlbum(album)}
+        >
+          <h4>{album.name}</h4>
+          <p>{album.description}</p>
+          <span className="post-count">{album.postCount || 0} posts</span>
+        </div>
+      ))}
+    </div>
+  ), [albums, selectedAlbum]);
+
+  // Memoized posts grid
+  const postsGrid = useMemo(() => (
+    <div className="posts-grid">
+      {posts.map(post => (
+        <div key={post.id} className="post-card">
+          <div className="post-media">
+            {post.media && post.media.length > 0 && (
+              <img 
+                src={post.media[0].url} 
+                alt="Post"
+                className="post-image"
+                loading="lazy"
+              />
+            )}
+            {post.media && post.media.length > 1 && (
+              <div className="media-count">
+                +{post.media.length - 1}
+              </div>
+            )}
+          </div>
+          <div className="post-content">
+            <p className="post-caption">{post.caption}</p>
+            <div className="post-meta">
+              <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+              <button
+                onClick={() => deletePost(post.id)}
+                className="delete-btn"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  ), [posts, deletePost]);
 
   return (
     <div className="albums-page">
@@ -196,19 +269,7 @@ const Albums = () => {
             ) : albums.length === 0 ? (
               <p className="empty-message">No albums yet</p>
             ) : (
-              <div className="albums-list">
-                {albums.map(album => (
-                  <div
-                    key={album.id}
-                    className={`album-item ${selectedAlbum?.id === album.id ? "active" : ""}`}
-                    onClick={() => setSelectedAlbum(album)}
-                  >
-                    <h4>{album.name}</h4>
-                    <p>{album.description}</p>
-                    <span className="post-count">{album.postCount || 0} posts</span>
-                  </div>
-                ))}
-              </div>
+              albumList
             )}
           </div>
 
@@ -228,38 +289,7 @@ const Albums = () => {
                   </button>
                 </div>
 
-                <div className="posts-grid">
-                  {posts.map(post => (
-                    <div key={post.id} className="post-card">
-                      <div className="post-media">
-                        {post.media && post.media.length > 0 && (
-                          <img 
-                            src={post.media[0].url} 
-                            alt="Post"
-                            className="post-image"
-                          />
-                        )}
-                        {post.media && post.media.length > 1 && (
-                          <div className="media-count">
-                            +{post.media.length - 1}
-                          </div>
-                        )}
-                      </div>
-                      <div className="post-content">
-                        <p className="post-caption">{post.caption}</p>
-                        <div className="post-meta">
-                          <span>{new Date(post.createdAt).toLocaleDateString()}</span>
-                          <button
-                            onClick={() => deletePost(post.id)}
-                            className="delete-btn"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {postsGrid}
               </>
             ) : (
               <div className="empty-state">
@@ -270,6 +300,7 @@ const Albums = () => {
           </div>
         </div>
 
+        {/* Create Album Modal */}
         {showCreateAlbum && (
           <div className="modal-overlay" onClick={() => setShowCreateAlbum(false)}>
             <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -295,7 +326,11 @@ const Albums = () => {
                   />
                 </div>
                 <div className="modal-actions">
-                  <button type="button" onClick={() => setShowCreateAlbum(false)} className="btn btn-secondary">
+                  <button 
+                    type="button" 
+                    onClick={() => setShowCreateAlbum(false)} 
+                    className="btn btn-secondary"
+                  >
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-primary">
@@ -307,10 +342,11 @@ const Albums = () => {
           </div>
         )}
 
+        {/* Create Post Modal */}
         {showCreatePost && (
           <div className="modal-overlay" onClick={() => {
-            setShowCreatePost(false)
-            stopCapture()
+            setShowCreatePost(false);
+            stopCapture();
           }}>
             <div className="modal large-modal" onClick={(e) => e.stopPropagation()}>
               <h2>Create New Post</h2>
@@ -358,7 +394,7 @@ const Albums = () => {
                           playsInline
                           ref={(video) => {
                             if (video && stream) {
-                              video.srcObject = stream
+                              video.srcObject = stream;
                             }
                           }}
                           className="camera-preview"
@@ -392,8 +428,8 @@ const Albums = () => {
                   <button 
                     type="button" 
                     onClick={() => {
-                      setShowCreatePost(false)
-                      stopCapture()
+                      setShowCreatePost(false);
+                      stopCapture();
                     }} 
                     className="btn btn-secondary"
                   >
@@ -409,7 +445,7 @@ const Albums = () => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Albums
+export default Albums;
