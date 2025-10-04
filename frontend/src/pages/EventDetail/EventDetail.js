@@ -1,125 +1,133 @@
-"use client"
-
-import { useState, useEffect, useCallback, useContext } from "react"
-import { useParams, useNavigate } from "react-router-dom"
-import Navbar from "../../components/Navbar/Navbar"
-import axios from "axios"
-import "./EventDetail.css"
-import AlbumManager from "../../components/AlbumManager/AlbumManager"
-import MemoryViewer from "../../components/MemoryViewer/MemoryViewer"
-import { useAuth } from "../../context/AuthContext"
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import Navbar from "../../components/Navbar/Navbar";
+import { eventsAPI } from "../../utils/api";
+import "./EventDetail.css";
+import AlbumManager from "../../components/AlbumManager/AlbumManager";
+import MemoryViewer from "../../components/MemoryViewer/MemoryViewer";
+import { useAuth } from "../../context/AuthContext";
 
 const EventDetail = () => {
-  const { id } = useParams()
-  const navigate = useNavigate()
-  const { user, token } = useAuth()
-  const [event, setEvent] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
-  const [registering, setRegistering] = useState(false)
-  const [showRegistrationForm, setShowRegistrationForm] = useState(false)
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [event, setEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [registering, setRegistering] = useState(false);
+  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [registrationData, setRegistrationData] = useState({
     specialRequests: "",
     emergencyContact: "",
     dietaryRestrictions: "",
-  })
-  const [selectedAlbum, setSelectedAlbum] = useState(null)
+  });
+  const [selectedAlbum, setSelectedAlbum] = useState(null);
 
+  // Fetch event details
   const fetchEventDetail = useCallback(async () => {
     try {
-      setLoading(true)
-      const response = await axios.get(`/api/events/${id}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      })
-      setEvent(response.data.event)
+      setLoading(true);
+      setError("");
+      const response = await eventsAPI.getById(id);
+      setEvent(response.data.event);
     } catch (error) {
-      console.error("Error fetching event detail:", error)
-      setError("Failed to load event details")
+      console.error("Error fetching event detail:", error);
+      setError("Failed to load event details");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [id, token])
+  }, [id]);
 
   useEffect(() => {
-    fetchEventDetail()
-  }, [fetchEventDetail])
+    fetchEventDetail();
+  }, [fetchEventDetail]);
 
-  const handleRegister = async (e) => {
-    e.preventDefault()
+  // Handle event registration
+  const handleRegister = useCallback(async (e) => {
+    e.preventDefault();
     try {
-      setRegistering(true)
-      await axios.post(
-        `/api/events/${id}/register`,
-        registrationData, // will be ignored by backend unless you add support
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }
-      )
+      setRegistering(true);
+      await eventsAPI.register(id);
 
       setEvent((prev) => ({
         ...prev,
         isRegistered: true,
         registrationCount: prev.registrationCount + 1,
-      }))
+      }));
 
-      setShowRegistrationForm(false)
-      alert("Successfully registered for event!")
+      setShowRegistrationForm(false);
+      alert("Successfully registered for event!");
     } catch (error) {
-      console.error("Registration error:", error)
-      alert(error.response?.data?.message || "Failed to register for event")
+      console.error("Registration error:", error);
+      alert(error.response?.data?.message || "Failed to register for event");
     } finally {
-      setRegistering(false)
+      setRegistering(false);
     }
-  }
+  }, [id]);
 
-  const handleUnregister = async () => {
+  // Handle event unregistration
+  const handleUnregister = useCallback(async () => {
     if (!window.confirm("Are you sure you want to unregister from this event?")) {
-      return
+      return;
     }
 
     try {
-      setRegistering(true)
-      await axios.delete(`/api/events/${id}/unregister`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      })
+      setRegistering(true);
+      await eventsAPI.unregister(id);
 
       setEvent((prev) => ({
         ...prev,
         isRegistered: false,
         registrationCount: prev.registrationCount > 0 ? prev.registrationCount - 1 : 0,
-      }))
+      }));
 
-      alert("Successfully unregistered from event!")
+      alert("Successfully unregistered from event!");
     } catch (error) {
-      console.error("Unregistration error:", error)
-      alert(error.response?.data?.message || "Failed to unregister from event")
+      console.error("Unregistration error:", error);
+      alert(error.response?.data?.message || "Failed to unregister from event");
     } finally {
-      setRegistering(false)
+      setRegistering(false);
     }
-  }
+  }, [id]);
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString)
+  // Memoized date formatting
+  const formatDate = useCallback((dateString) => {
+    const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
-    })
-  }
+    });
+  }, []);
 
-  const formatTime = (timeString) => {
-    return timeString
-  }
+  // Memoized event image URL
+  const eventImageUrl = useMemo(() => {
+    if (!event) return "/placeholder.svg";
+    
+    return event.thumbnail?.url || 
+           (event.eventImage && typeof event.eventImage === "string" ? event.eventImage : null) ||
+           "/placeholder.svg";
+  }, [event]);
 
-  const handleAlbumSelect = (album) => {
-    setSelectedAlbum(album)
-  }
+  // Album selection handlers
+  const handleAlbumSelect = useCallback((album) => {
+    setSelectedAlbum(album);
+  }, []);
 
-  const handleBackToAlbums = () => {
-    setSelectedAlbum(null)
-  }
+  const handleBackToAlbums = useCallback(() => {
+    setSelectedAlbum(null);
+  }, []);
 
+  // Registration form handlers
+  const handleRegistrationInputChange = useCallback((field, value) => {
+    setRegistrationData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  }, []);
+
+  // Loading state
   if (loading) {
     return (
       <div className="event-detail-page">
@@ -129,9 +137,10 @@ const EventDetail = () => {
           <p>Loading event details...</p>
         </div>
       </div>
-    )
+    );
   }
 
+  // Error state
   if (error || !event) {
     return (
       <div className="event-detail-page">
@@ -143,16 +152,8 @@ const EventDetail = () => {
           </button>
         </div>
       </div>
-    )
+    );
   }
-
-  // Get image URL (backend may send eventImage or thumbnail.url)
-  const eventImageUrl =
-    event.eventImage && typeof event.eventImage === "string"
-      ? event.eventImage
-      : event.thumbnail && event.thumbnail.url
-      ? event.thumbnail.url
-      : "/placeholder.svg"
 
   return (
     <div className="event-detail-page">
@@ -165,8 +166,8 @@ const EventDetail = () => {
           </button>
 
           <div className="event-hero">
-            {eventImageUrl ? (
-              <img src={eventImageUrl} alt={event.title} className="event-hero-image" />
+            {eventImageUrl && eventImageUrl !== "/placeholder.svg" ? (
+              <img src={eventImageUrl} alt={event.title} className="event-hero-image" loading="lazy" />
             ) : (
               <div className="event-hero-placeholder">📅</div>
             )}
@@ -181,13 +182,13 @@ const EventDetail = () => {
                   <strong>📅 Date:</strong> {formatDate(event.date)}
                 </div>
                 <div className="event-meta-item">
-                  <strong>🕒 Time:</strong> {formatTime(event.time)}
+                  <strong>🕒 Time:</strong> {event.time}
                 </div>
                 <div className="event-meta-item">
                   <strong>📍 Location:</strong> {event.location}
                 </div>
                 <div className="event-meta-item">
-                  <strong>👤 Host:</strong> {event.hostName}
+                  <strong>👤 Host:</strong> {event.organizer?.name || 'Unknown'}
                 </div>
                 <div className="event-meta-item">
                   <strong>👥 Registered:</strong> {event.registrationCount} / {event.maxAttendees}
@@ -199,7 +200,11 @@ const EventDetail = () => {
 
         <div className="event-actions">
           {event.isRegistered ? (
-            <button onClick={handleUnregister} disabled={registering} className="btn btn-danger">
+            <button 
+              onClick={handleUnregister} 
+              disabled={registering} 
+              className="btn btn-danger"
+            >
               {registering ? "Unregistering..." : "Unregister"}
             </button>
           ) : (
@@ -224,12 +229,7 @@ const EventDetail = () => {
                   <textarea
                     id="specialRequests"
                     value={registrationData.specialRequests}
-                    onChange={(e) =>
-                      setRegistrationData((prev) => ({
-                        ...prev,
-                        specialRequests: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => handleRegistrationInputChange('specialRequests', e.target.value)}
                     placeholder="Any special accommodations needed?"
                     rows="3"
                   />
@@ -241,12 +241,7 @@ const EventDetail = () => {
                     type="text"
                     id="emergencyContact"
                     value={registrationData.emergencyContact}
-                    onChange={(e) =>
-                      setRegistrationData((prev) => ({
-                        ...prev,
-                        emergencyContact: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => handleRegistrationInputChange('emergencyContact', e.target.value)}
                     placeholder="Emergency contact name and phone"
                   />
                 </div>
@@ -257,21 +252,24 @@ const EventDetail = () => {
                     type="text"
                     id="dietaryRestrictions"
                     value={registrationData.dietaryRestrictions}
-                    onChange={(e) =>
-                      setRegistrationData((prev) => ({
-                        ...prev,
-                        dietaryRestrictions: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => handleRegistrationInputChange('dietaryRestrictions', e.target.value)}
                     placeholder="Any dietary restrictions or allergies"
                   />
                 </div>
 
                 <div className="form-actions">
-                  <button type="button" onClick={() => setShowRegistrationForm(false)} className="btn btn-secondary">
+                  <button 
+                    type="button" 
+                    onClick={() => setShowRegistrationForm(false)} 
+                    className="btn btn-secondary"
+                  >
                     Cancel
                   </button>
-                  <button type="submit" disabled={registering} className="btn btn-primary">
+                  <button 
+                    type="submit" 
+                    disabled={registering} 
+                    className="btn btn-primary"
+                  >
                     {registering ? "Registering..." : "Confirm Registration"}
                   </button>
                 </div>
@@ -310,14 +308,22 @@ const EventDetail = () => {
           </div>
 
           {selectedAlbum ? (
-            <MemoryViewer album={selectedAlbum} onBack={handleBackToAlbums} isRegistered={event.isRegistered} />
+            <MemoryViewer 
+              album={selectedAlbum} 
+              onBack={handleBackToAlbums} 
+              isRegistered={event.isRegistered} 
+            />
           ) : (
-            <AlbumManager eventId={event.id} isRegistered={event.isRegistered} onAlbumSelect={handleAlbumSelect} />
+            <AlbumManager 
+              eventId={event.id} 
+              isRegistered={event.isRegistered} 
+              onAlbumSelect={handleAlbumSelect} 
+            />
           )}
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default EventDetail
+export default EventDetail;

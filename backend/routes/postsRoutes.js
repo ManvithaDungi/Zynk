@@ -1,301 +1,335 @@
 const express = require('express');
 const Post = require('../models/Post');
+const Album = require('../models/Album');
 const User = require('../models/User');
 const { authenticateToken } = require('../utils/jwtAuth');
+const { isValidObjectId, sanitizeString } = require('../utils/validation');
 
 const router = express.Router();
 
-// Get posts (feed)
+// Get all posts (feed)
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const db = client.db('zynk');
-    const posts = db.collection('posts');
-    const users = db.collection('users');
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
 
-    const currentUser = await users.findOne({ _id: new ObjectId(req.user.userId) });
+    const currentUser = await User.findById(req.user.userId);
     if (!currentUser) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const followingIds = currentUser.following || [];
-    const authorIds = [...followingIds, new ObjectId(req.user.userId)];
+    // Get posts from followed users and public albums
+    const posts = await Post.find({
+      $or: [
+        { user: { $in: currentUser.following } },
+        { album: { $in: await Album.find({ isPublic: true }).distinct('_id') } }
+      ]
+    })
+      .populate('user', 'name email avatar')
+      .populate('album', 'name')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
 
-    const postsData = await posts
-      .aggregate([
-        { $match: { authorId: { $in: authorIds } } },
-        { $lookup: { from: 'users', localField: 'authorId', foreignField: '_id', as: 'author' } },
-        { $unwind: '$author' },
-        {
-          $project: {
-            content: 1,
-            images: 1,
-            likes: 1,
-            comments: 1,
-            createdAt: 1,
-            updatedAt: 1,
-            'author.username': 1,
-            'author.avatar': 1,
-            'author.isVerified': 1,
-          },
-        },
-        { $sort: { createdAt: -1 } },
-        { $limit: 50 },
-      ])
-      .toArray();
+    const total = await Post.countDocuments({
+      $or: [
+        { user: { $in: currentUser.following } },
+        { album: { $in: await Album.find({ isPublic: true }).distinct('_id') } }
+      ]
+    });
 
-    const formattedPosts = postsData.map((post) => ({
-      id: post._id.toString(),
-      content: post.content,
-      images: post.images || [],
-      author: {
-        id: post.author._id.toString(),
-        username: post.author.username,
-        avatar: post.author.avatar,
-        isVerified: post.author.isVerified || false,
-      },
-      likes: post.likes || [],
-      comments: post.comments || 0,
-      createdAt: post.createdAt,
-      updatedAt: post.updatedAt,
-    }));
-
-    res.json({ posts: formattedPosts });
+    res.json({
+      posts: posts.map(post => ({
+        id: post._id,
+        caption: post.caption,
+        media: post.media,
+        likesCount: post.likesCount,
+        commentsCount: post.commentsCount,
+        user: post.user,
+        album: post.album,
+        isLiked: post.likes.some(like => like.user.toString() === req.user.userId),
+        createdAt: post.createdAt
+      })),
+      pagination: {
+        current: parseInt(page),
+        pages: Math.ceil(total / limit),
+        total
+      }
+    });
   } catch (error) {
     console.error('Get posts error:', error);
     res.status(500).json({ message: 'Internal server error' });
-  } finally {
   }
 });
 
 // Create post
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { content, images } = req.body;
-    if (!content?.trim() && (!images || images.length === 0)) {
-      return res.status(400).json({ message: 'Post content or images are required' });
+    const { caption, album, media } = req.body;
+
+    // Input validation
+    if (!caption || !album || !media || !Array.isArray(media) || media.length === 0) {
+      return res.status(400).json({
+        message: 'Caption, album, and at least one media item are required'
+      });
     }
 
-    const db = client.db('zynk');
-    const posts = db.collection('posts');
-    const users = db.collection('users');
+    if (!isValidObjectId(album)) {
+      return res.status(400).json({ message: 'Invalid album ID' });
+    }
 
-    const newPost = {
-      content: content?.trim() || '',
-      images: images || [],
-      authorId: new ObjectId(req.user.userId),
-      likes: [],
-      comments: 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+    // Check if album exists and user has access
+    const albumDoc = await Album.findById(album);
+    if (!albumDoc) {
+      return res.status(404).json({ message: 'Album not found' });
+    }
+
+    if (albumDoc.createdBy.toString() !== req.user.userId) {
+      return res.status(403).json({ message: 'You can only post to your own albums' });
+    }
+
+    const postData = {
+      caption: sanitizeString(caption),
+      album,
+      user: req.user.userId,
+      media: media.map(item => ({
+        url: item.url,
+        type: item.type,
+        filename: item.filename
+      }))
     };
 
-    const result = await posts.insertOne(newPost);
-    await users.updateOne({ _id: new ObjectId(req.user.userId) }, { $inc: { postsCount: 1 } });
+    const post = new Post(postData);
+    const savedPost = await post.save();
 
-    res.json({ message: 'Post created successfully', postId: result.insertedId });
+    // Update user's posts count
+    await User.findByIdAndUpdate(req.user.userId, {
+      $inc: { postsCount: 1 }
+    });
+
+    await savedPost.populate('user', 'name email avatar');
+    await savedPost.populate('album', 'name');
+
+    res.status(201).json({
+      message: 'Post created successfully',
+      post: {
+        id: savedPost._id,
+        caption: savedPost.caption,
+        media: savedPost.media,
+        likesCount: savedPost.likesCount,
+        commentsCount: savedPost.commentsCount,
+        user: savedPost.user,
+        album: savedPost.album,
+        createdAt: savedPost.createdAt
+      }
+    });
   } catch (error) {
     console.error('Create post error:', error);
     res.status(500).json({ message: 'Internal server error' });
-  } finally {
   }
 });
 
-// Get specific post
-router.get('/:postId', authenticateToken, async (req, res) => {
+// Get post by ID
+router.get('/:id', authenticateToken, async (req, res) => {
   try {
-    const { postId } = req.params;
+    const { id } = req.params;
 
-    const db = client.db('zynk');
-    const posts = db.collection('posts');
-
-    const post = await posts
-      .aggregate([
-        { $match: { _id: new ObjectId(postId) } },
-        { $lookup: { from: 'users', localField: 'authorId', foreignField: '_id', as: 'author' } },
-        { $unwind: '$author' },
-        {
-          $project: {
-            content: 1,
-            images: 1,
-            likes: 1,
-            comments: 1,
-            createdAt: 1,
-            updatedAt: 1,
-            'author.username': 1,
-            'author.avatar': 1,
-            'author.isVerified': 1,
-          },
-        },
-      ])
-      .toArray();
-
-    if (post.length === 0) {
-      return res.status(404).json({ message: 'Post not found' });
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid post ID' });
     }
 
-    const formattedPost = {
-      id: post[0]._id.toString(),
-      content: post[0].content,
-      images: post[0].images || [],
-      author: {
-        id: post[0].author._id.toString(),
-        username: post[0].author.username,
-        avatar: post[0].author.avatar,
-        isVerified: post[0].author.isVerified || false,
-      },
-      likes: post[0].likes || [],
-      comments: post[0].comments || 0,
-      createdAt: post[0].createdAt,
-      updatedAt: post[0].updatedAt,
-    };
+    const post = await Post.findById(id)
+      .populate('user', 'name email avatar')
+      .populate('album', 'name')
+      .populate('comments.user', 'name email avatar');
 
-    res.json({ post: formattedPost });
-  } catch (error) {
-    console.error('Get post error:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  } finally {
-  }
-});
-
-// Update post
-router.put('/:postId', authenticateToken, async (req, res) => {
-  try {
-    const { postId } = req.params;
-    const { content, images } = req.body;
-    if (!content?.trim() && (!images || images.length === 0)) {
-      return res.status(400).json({ message: 'Post content or images are required' });
-    }
-
-    const db = client.db('zynk');
-    const posts = db.collection('posts');
-
-    const post = await posts.findOne({ _id: new ObjectId(postId) });
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    if (post.authorId.toString() !== req.user.userId) {
-      return res.status(403).json({ message: 'You can only edit your own posts' });
+    res.json({
+      post: {
+        id: post._id,
+        caption: post.caption,
+        media: post.media,
+        likesCount: post.likesCount,
+        commentsCount: post.commentsCount,
+        user: post.user,
+        album: post.album,
+        comments: post.comments,
+        isLiked: post.likes.some(like => like.user.toString() === req.user.userId),
+        createdAt: post.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Get post error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Like post
+router.post('/:id/like', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid post ID' });
     }
 
-    await posts.updateOne(
-      { _id: new ObjectId(postId) },
-      { $set: { content: content?.trim() || '', images: images || [], updatedAt: new Date() } }
-    );
+    const post = await Post.findById(id);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Check if already liked
+    const alreadyLiked = post.likes.some(like => like.user.toString() === req.user.userId);
+    if (alreadyLiked) {
+      return res.status(400).json({ message: 'Post already liked' });
+    }
+
+    post.likes.push({ user: req.user.userId });
+    await post.save();
+
+    res.json({ message: 'Post liked successfully' });
+  } catch (error) {
+    console.error('Like post error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Unlike post
+router.post('/:id/unlike', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid post ID' });
+    }
+
+    const post = await Post.findById(id);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    post.likes = post.likes.filter(like => like.user.toString() !== req.user.userId);
+    await post.save();
+
+    res.json({ message: 'Post unliked successfully' });
+  } catch (error) {
+    console.error('Unlike post error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Add comment
+router.post('/:id/comments', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { text } = req.body;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid post ID' });
+    }
+
+    if (!text || !text.trim()) {
+      return res.status(400).json({ message: 'Comment text is required' });
+    }
+
+    const post = await Post.findById(id);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    const comment = {
+      user: req.user.userId,
+      text: sanitizeString(text)
+    };
+
+    post.comments.push(comment);
+    await post.save();
+
+    await post.populate('comments.user', 'name email avatar');
+
+    const newComment = post.comments[post.comments.length - 1];
+
+    res.status(201).json({
+      message: 'Comment added successfully',
+      comment: {
+        id: newComment._id,
+        text: newComment.text,
+        user: newComment.user,
+        createdAt: newComment.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Add comment error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Update post
+router.put('/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { caption } = req.body;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid post ID' });
+    }
+
+    const post = await Post.findById(id);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Check if user is the author
+    if (post.user.toString() !== req.user.userId) {
+      return res.status(403).json({ message: 'Only the author can update this post' });
+    }
+
+    if (caption) {
+      post.caption = sanitizeString(caption);
+    }
+
+    await post.save();
 
     res.json({ message: 'Post updated successfully' });
   } catch (error) {
     console.error('Update post error:', error);
     res.status(500).json({ message: 'Internal server error' });
-  } finally {
   }
 });
 
 // Delete post
-router.delete('/:postId', authenticateToken, async (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
-    const { postId } = req.params;
+    const { id } = req.params;
 
-    const db = client.db('zynk');
-    const posts = db.collection('posts');
-    const users = db.collection('users');
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid post ID' });
+    }
 
-    const post = await posts.findOne({ _id: new ObjectId(postId) });
+    const post = await Post.findById(id);
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    if (post.authorId.toString() !== req.user.userId) {
-      return res.status(403).json({ message: 'You can only delete your own posts' });
+    // Check if user is the author
+    if (post.user.toString() !== req.user.userId) {
+      return res.status(403).json({ message: 'Only the author can delete this post' });
     }
 
-    await posts.deleteOne({ _id: new ObjectId(postId) });
-    await users.updateOne({ _id: new ObjectId(req.user.userId) }, { $inc: { postsCount: -1 } });
+    await Post.findByIdAndDelete(id);
+
+    // Update user's posts count
+    await User.findByIdAndUpdate(req.user.userId, {
+      $inc: { postsCount: -1 }
+    });
 
     res.json({ message: 'Post deleted successfully' });
   } catch (error) {
     console.error('Delete post error:', error);
     res.status(500).json({ message: 'Internal server error' });
-  } finally {
-  }
-});
-
-// Like/Unlike post
-router.post('/:postId/like', authenticateToken, async (req, res) => {
-  try {
-    const { postId } = req.params;
-
-    const db = client.db('zynk');
-    const posts = db.collection('posts');
-
-    const post = await posts.findOne({ _id: new ObjectId(postId) });
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
-    }
-
-    const userId = new ObjectId(req.user.userId);
-    const isLiked = post.likes && post.likes.some(like => like.toString() === req.user.userId);
-
-    if (isLiked) {
-      // Unlike
-      await posts.updateOne(
-        { _id: new ObjectId(postId) },
-        { $pull: { likes: userId } }
-      );
-      res.json({ message: 'Post unliked', liked: false });
-    } else {
-      // Like
-      await posts.updateOne(
-        { _id: new ObjectId(postId) },
-        { $addToSet: { likes: userId } }
-      );
-      res.json({ message: 'Post liked', liked: true });
-    }
-  } catch (error) {
-    console.error('Like post error:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  } finally {
-  }
-});
-
-// Add comment to post
-router.post('/:postId/comments', authenticateToken, async (req, res) => {
-  try {
-    const { postId } = req.params;
-    const { content } = req.body;
-
-    if (!content?.trim()) {
-      return res.status(400).json({ message: 'Comment content is required' });
-    }
-
-    const db = client.db('zynk');
-    const posts = db.collection('posts');
-
-    const post = await posts.findOne({ _id: new ObjectId(postId) });
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
-    }
-
-    const newComment = {
-      _id: new ObjectId(),
-      content: content.trim(),
-      authorId: new ObjectId(req.user.userId),
-      createdAt: new Date(),
-    };
-
-    await posts.updateOne(
-      { _id: new ObjectId(postId) },
-      { 
-        $push: { comments: newComment },
-        $inc: { commentsCount: 1 }
-      }
-    );
-
-    res.json({ message: 'Comment added successfully', commentId: newComment._id });
-  } catch (error) {
-    console.error('Add comment error:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  } finally {
   }
 });
 

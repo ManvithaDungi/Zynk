@@ -1,19 +1,10 @@
-// backend/routes/authRoutes.js
 const express = require('express');
-const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
-const bcrypt = require('bcryptjs');
 const User = require('../models/User');
-const { authenticateToken } = require('../utils/jwtAuth');
+const { authenticateToken, generateToken } = require('../utils/jwtAuth');
+const { isValidEmail, isValidPassword, sanitizeString } = require('../utils/validation');
 
 const router = express.Router();
-
-// Generate Token
-const generateToken = (userId, email, username) => {
-  return jwt.sign({ userId, email, username }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d'
-  });
-};
 
 // Rate limiting for auth endpoints
 const authLimiter = rateLimit({
@@ -26,40 +17,51 @@ const authLimiter = rateLimit({
 });
 
 // Register
-router.post('/register', async (req, res) => {
+router.post('/register', authLimiter, async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // Basic field validation
+    // Input validation
     if (!username || !email || !password) {
       return res.status(400).json({
         message: 'Username, email, and password are required'
       });
     }
 
-    // Password length validation
-    if (password.length < 6) {
+    // Sanitize inputs
+    const sanitizedUsername = sanitizeString(username);
+    const sanitizedEmail = sanitizeString(email).toLowerCase();
+
+    // Validate email format
+    if (!isValidEmail(sanitizedEmail)) {
       return res.status(400).json({
-        message: 'Password must be at least 6 characters long'
+        message: 'Please enter a valid email address'
+      });
+    }
+
+    // Validate password strength
+    if (!isValidPassword(password)) {
+      return res.status(400).json({
+        message: 'Password must be at least 6 characters and contain at least one letter and one number'
       });
     }
 
     // Check for existing user
-    const existingUser = await User.findOne({ $or: [{ email }, { name: username }] });
+    const existingUser = await User.findOne({ 
+      $or: [{ email: sanitizedEmail }, { name: sanitizedUsername }] 
+    });
+    
     if (existingUser) {
       return res.status(409).json({
         message: 'User with this email or username already exists'
       });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Create new user
+    // Create new user (password will be hashed by pre-save hook)
     const newUser = new User({
-      name: username,
-      email,
-      password: hashedPassword,
+      name: sanitizedUsername,
+      email: sanitizedEmail,
+      password,
       role: 'user'
     });
 
@@ -78,19 +80,22 @@ router.post('/register', async (req, res) => {
 });
 
 // Login
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Basic field validation
+    // Input validation
     if (!email || !password) {
       return res.status(400).json({
         message: 'Email and password are required'
       });
     }
 
+    // Sanitize email
+    const sanitizedEmail = sanitizeString(email).toLowerCase();
+
     // Find user
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: sanitizedEmail });
     if (!user) {
       return res.status(401).json({
         message: 'Invalid credentials'
@@ -98,7 +103,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Check password
-    const isValidPassword = await bcrypt.compare(password, user.password);
+    const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {
       return res.status(401).json({
         message: 'Invalid credentials'
@@ -128,6 +133,7 @@ router.post('/login', async (req, res) => {
         email: user.email,
         avatar: user.avatar,
         bio: user.bio,
+        role: user.role
       }
     });
   } catch (error) {
@@ -141,7 +147,8 @@ router.post('/login', async (req, res) => {
 // Get current user
 router.get('/me', authenticateToken, async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId);
+    const user = await User.findById(req.user.userId).select('-password');
+    
     if (!user) {
       return res.status(404).json({
         message: 'User not found'
@@ -155,11 +162,13 @@ router.get('/me', authenticateToken, async (req, res) => {
         email: user.email,
         avatar: user.avatar,
         bio: user.bio,
+        role: user.role,
         followers: user.followers || [],
         following: user.following || [],
         postsCount: user.postsCount || 0,
         isVerified: user.isVerified || false,
         isPrivate: user.isPrivate || false,
+        lastLogin: user.lastLogin,
         createdAt: user.createdAt
       }
     });

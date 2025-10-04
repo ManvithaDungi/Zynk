@@ -1,15 +1,11 @@
-"use client"
-
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import Navbar from "../../components/Navbar/Navbar"
-import axios from "axios"
-import { useAuth } from "../../context/AuthContext"
-import "./CreateEvent.css"
+import { useState, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import Navbar from "../../components/Navbar/Navbar";
+import { eventsAPI } from "../../utils/api";
+import "./CreateEvent.css";
 
 const CreateEvent = () => {
-  const navigate = useNavigate()
-  const { token } = useAuth()
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -19,179 +15,177 @@ const CreateEvent = () => {
     category: "Other",
     maxAttendees: 100,
     thumbnail: null,
-  })
-  const [errors, setErrors] = useState({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [successMessage, setSuccessMessage] = useState("")
-  const [thumbnailPreview, setThumbnailPreview] = useState(null)
+  });
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [thumbnailPreview, setThumbnailPreview] = useState(null);
 
-  const categories = ["Conference", "Workshop", "Meetup", "Social", "Sports", "Arts", "Music", "Other"]
+  const categories = useMemo(() => [
+    "Conference", "Workshop", "Meetup", "Social", 
+    "Sports", "Arts", "Music", "Other"
+  ], []);
 
-  const validateForm = () => {
-    const newErrors = {}
+  // Form validation
+  const validateForm = useCallback(() => {
+    const newErrors = {};
 
     // Title validation
     if (!formData.title.trim()) {
-      newErrors.title = "Event title is required"
+      newErrors.title = "Event title is required";
     } else if (formData.title.length < 3) {
-      newErrors.title = "Title must be at least 3 characters"
+      newErrors.title = "Title must be at least 3 characters";
     } else if (formData.title.length > 200) {
-      newErrors.title = "Title cannot exceed 200 characters"
+      newErrors.title = "Title cannot exceed 200 characters";
     }
 
     // Description validation
     if (!formData.description.trim()) {
-      newErrors.description = "Event description is required"
+      newErrors.description = "Event description is required";
     } else if (formData.description.length < 10) {
-      newErrors.description = "Description must be at least 10 characters"
+      newErrors.description = "Description must be at least 10 characters";
     } else if (formData.description.length > 2000) {
-      newErrors.description = "Description cannot exceed 2000 characters"
+      newErrors.description = "Description cannot exceed 2000 characters";
     }
 
     // Date validation
     if (!formData.date) {
-      newErrors.date = "Event date is required"
+      newErrors.date = "Event date is required";
     } else {
-      const selectedDate = new Date(formData.date)
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
+      const selectedDate = new Date(formData.date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
       if (selectedDate < today) {
-        newErrors.date = "Event date must be in the future"
+        newErrors.date = "Event date must be in the future";
       }
     }
 
     // Time validation
     if (!formData.time) {
-      newErrors.time = "Event time is required"
+      newErrors.time = "Event time is required";
     }
 
     // Location validation
     if (!formData.location.trim()) {
-      newErrors.location = "Event location is required"
+      newErrors.location = "Event location is required";
     } else if (formData.location.length < 3) {
-      newErrors.location = "Location must be at least 3 characters"
+      newErrors.location = "Location must be at least 3 characters";
     } else if (formData.location.length > 300) {
-      newErrors.location = "Location cannot exceed 300 characters"
+      newErrors.location = "Location cannot exceed 300 characters";
     }
 
     // Max attendees validation
-    const maxAttendees = Number.parseInt(formData.maxAttendees)
+    const maxAttendees = Number.parseInt(formData.maxAttendees);
     if (isNaN(maxAttendees) || maxAttendees < 1) {
-      newErrors.maxAttendees = "Maximum attendees must be at least 1"
+      newErrors.maxAttendees = "Maximum attendees must be at least 1";
     } else if (maxAttendees > 10000) {
-      newErrors.maxAttendees = "Maximum attendees cannot exceed 10,000"
+      newErrors.maxAttendees = "Maximum attendees cannot exceed 10,000";
     }
 
-    // Thumbnail validation (optional but with constraints if provided)
+    // Thumbnail validation (optional)
     if (formData.thumbnail) {
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
-      const maxSize = 5 * 1024 * 1024 // 5MB
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      const maxSize = 5 * 1024 * 1024; // 5MB
 
       if (!allowedTypes.includes(formData.thumbnail.type)) {
-        newErrors.thumbnail = "Please upload a valid image file (JPEG, PNG, or WebP)"
+        newErrors.thumbnail = "Please upload a valid image file (JPEG, PNG, or WebP)";
       } else if (formData.thumbnail.size > maxSize) {
-        newErrors.thumbnail = "Image size must be less than 5MB"
+        newErrors.thumbnail = "Image size must be less than 5MB";
       }
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [formData]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target
+  const handleInputChange = useCallback((e) => {
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }))
+    }));
 
     // Clear error for this field when user starts typing
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
         [name]: "",
-      }))
+      }));
     }
 
     // Clear success message when user starts editing
     if (successMessage) {
-      setSuccessMessage("")
+      setSuccessMessage("");
     }
-  }
+  }, [errors, successMessage]);
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0]
+  const handleImageChange = useCallback((e) => {
+    const file = e.target.files[0];
     
     if (file) {
       setFormData((prev) => ({
         ...prev,
         thumbnail: file,
-      }))
+      }));
 
       // Create preview
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onload = (e) => {
-        setThumbnailPreview(e.target.result)
-      }
-      reader.readAsDataURL(file)
+        setThumbnailPreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
 
       // Clear thumbnail error if exists
       if (errors.thumbnail) {
         setErrors((prev) => ({
           ...prev,
           thumbnail: "",
-        }))
+        }));
       }
     }
 
     // Clear success message when user starts editing
     if (successMessage) {
-      setSuccessMessage("")
+      setSuccessMessage("");
     }
-  }
+  }, [errors.thumbnail, successMessage]);
 
-  const handleRemoveImage = () => {
+  const handleRemoveImage = useCallback(() => {
     setFormData((prev) => ({
       ...prev,
       thumbnail: null,
-    }))
-    setThumbnailPreview(null)
+    }));
+    setThumbnailPreview(null);
     
     // Clear the file input
-    const fileInput = document.getElementById('thumbnail')
+    const fileInput = document.getElementById('thumbnail');
     if (fileInput) {
-      fileInput.value = ''
+      fileInput.value = '';
     }
-  }
+  }, []);
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!validateForm()) {
-      return
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     try {
-      const submitData = new FormData()
+      const submitData = new FormData();
       Object.keys(formData).forEach(key => {
         if (key === 'thumbnail' && formData[key]) {
-          submitData.append('eventImage', formData[key])
+          submitData.append('eventImage', formData[key]);
         } else if (key !== 'thumbnail') {
-          submitData.append(key, formData[key])
+          submitData.append(key, formData[key]);
         }
-      })
+      });
 
-      const response = await axios.post("/api/events/create", submitData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${token}`
-        },
-      })
-
-      setSuccessMessage("Event created successfully!")
+      const response = await eventsAPI.create(submitData);
+      setSuccessMessage("Event created successfully!");
 
       // Reset form
       setFormData({
@@ -203,34 +197,34 @@ const CreateEvent = () => {
         category: "Other",
         maxAttendees: 100,
         thumbnail: null,
-      })
-      setThumbnailPreview(null)
+      });
+      setThumbnailPreview(null);
 
       // Clear file input
-      const fileInput = document.getElementById('thumbnail')
+      const fileInput = document.getElementById('thumbnail');
       if (fileInput) {
-        fileInput.value = ''
+        fileInput.value = '';
       }
 
       // Redirect to event details after a short delay
       setTimeout(() => {
-        navigate(`/event/${response.data.event.id}`)
-      }, 2000)
+        navigate(`/event/${response.data.event.id}`);
+      }, 2000);
     } catch (error) {
-      console.error("Create event error:", error)
-      const errorMessage = error.response?.data?.message || "Failed to create event"
+      console.error("Create event error:", error);
+      const errorMessage = error.response?.data?.message || "Failed to create event";
 
       if (error.response?.data?.errors) {
-        setErrors(error.response.data.errors)
+        setErrors(error.response.data.errors);
       } else {
-        setErrors({ general: errorMessage })
+        setErrors({ general: errorMessage });
       }
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setFormData({
       title: "",
       description: "",
@@ -240,23 +234,23 @@ const CreateEvent = () => {
       category: "Other",
       maxAttendees: 100,
       thumbnail: null,
-    })
-    setErrors({})
-    setSuccessMessage("")
-    setThumbnailPreview(null)
+    });
+    setErrors({});
+    setSuccessMessage("");
+    setThumbnailPreview(null);
     
     // Clear file input
-    const fileInput = document.getElementById('thumbnail')
+    const fileInput = document.getElementById('thumbnail');
     if (fileInput) {
-      fileInput.value = ''
+      fileInput.value = '';
     }
-  }
+  }, []);
 
   // Get minimum date (today)
-  const getMinDate = () => {
-    const today = new Date()
-    return today.toISOString().split("T")[0]
-  }
+  const getMinDate = useCallback(() => {
+    const today = new Date();
+    return today.toISOString().split("T")[0];
+  }, []);
 
   return (
     <div className="create-event-page">
@@ -523,10 +517,19 @@ const CreateEvent = () => {
             </div>
 
             <div className="form-actions">
-              <button type="button" onClick={handleReset} className="btn btn-secondary" disabled={isSubmitting}>
+              <button 
+                type="button" 
+                onClick={handleReset} 
+                className="btn btn-secondary" 
+                disabled={isSubmitting}
+              >
                 Reset Form
               </button>
-              <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+              <button 
+                type="submit" 
+                className="btn btn-primary" 
+                disabled={isSubmitting}
+              >
                 {isSubmitting ? (
                   <span className="loading-text">
                     <span className="loading-spinner-small"></span>
@@ -541,7 +544,7 @@ const CreateEvent = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default CreateEvent
+export default CreateEvent;

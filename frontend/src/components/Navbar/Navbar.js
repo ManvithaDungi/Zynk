@@ -1,21 +1,21 @@
-"use client"
-import { Link, useLocation, useNavigate } from "react-router-dom"
-import { useAuth } from "../../context/AuthContext"
-import "./Navbar.css"
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { useCallback } from "react";
+import "./Navbar.css";
 
 const Navbar = () => {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const { user, logout } = useAuth()
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
-  const handleLogout = () => {
-    logout()
-    navigate("/login")
-  }
+  const handleLogout = useCallback(() => {
+    logout();
+    navigate("/login");
+  }, [logout, navigate]);
 
-  const isActive = (path) => {
-    return location.pathname === path
-  }
+  const isActive = useCallback((path) => {
+    return location.pathname === path;
+  }, [location.pathname]);
 
   return (
     <nav className="navbar">
@@ -25,28 +25,22 @@ const Navbar = () => {
         </Link>
 
         <div className="navbar-menu">
-          <Link to="/upcoming-events" className={`navbar-link ${isActive("/upcoming-events") ? "active" : ""}`}>
+          <Link 
+            to="/upcoming-events" 
+            className={`navbar-link ${isActive("/upcoming-events") ? "active" : ""}`}
+          >
             Upcoming Events
           </Link>
 
-          <Link to="/search" className={`navbar-link ${isActive("/search") ? "active" : ""}`}>
-            Search
-          </Link>
-
-          <Link to="/albums" className={`navbar-link ${isActive("/albums") ? "active" : ""}`}>
+          <Link 
+            to="/albums" 
+            className={`navbar-link ${isActive("/albums") ? "active" : ""}`}
+          >
             Albums
           </Link>
 
-          <Link to="/profile" className={`navbar-link ${isActive("/profile") ? "active" : ""}`}>
-            Profile
-          </Link>
-
-          <Link to="/collaboration" className={`navbar-link ${isActive("/collaboration") ? "active" : ""}`}>
-            Collaboration
-          </Link>
-
-          <Link
-            to="/create-event"
+          <Link 
+            to="/create-event" 
             className={`navbar-link create-event-link ${isActive("/create-event") ? "active" : ""}`}
           >
             Create Event
@@ -56,14 +50,18 @@ const Navbar = () => {
         <div className="navbar-user">
           <div className="user-info">
             <span className="user-name">{user?.name}</span>
-            <button onClick={handleLogout} className="logout-btn" aria-label="Logout">
+            <button 
+              onClick={handleLogout} 
+              className="logout-btn" 
+              aria-label="Logout"
+            >
               Logout
             </button>
           </div>
         </div>
       </div>
     </nav>
-  )
-}
+  );
+};
 
-export default Navbar
+export default Navbar;

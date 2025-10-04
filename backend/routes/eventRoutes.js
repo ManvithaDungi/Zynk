@@ -1,10 +1,11 @@
-
-//backend/routes/eventRoutes.js
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const Event = require('../models/Event');
+const User = require('../models/User');
 const { authenticateToken } = require('../utils/jwtAuth');
+const { isValidObjectId, sanitizeString, isValidTime } = require('../utils/validation');
+
 const router = express.Router();
 
 // Configure multer for file uploads
@@ -13,22 +14,102 @@ const storage = multer.diskStorage({
     cb(null, 'uploads/events/');
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
   }
 });
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (mimetype && extname) {
-      return cb(null, true);
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
     }
-    cb(new Error('Only image files are allowed'));
+  }
+});
+
+// Get all events
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const { page = 1, limit = 10, category, status = 'active' } = req.query;
+    const skip = (page - 1) * limit;
+
+    const filter = { status };
+    if (category) filter.category = category;
+
+    const events = await Event.find(filter)
+      .populate('organizer', 'name email avatar')
+      .populate('registeredUsers', 'name email')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Event.countDocuments(filter);
+
+    res.json({
+      events: events.map(event => ({
+        id: event._id,
+        title: event.title,
+        description: event.description,
+        date: event.date,
+        time: event.time,
+        location: event.location,
+        category: event.category,
+        maxAttendees: event.maxAttendees,
+        registrationCount: event.registrationCount,
+        thumbnail: event.thumbnail,
+        organizer: event.organizer,
+        status: event.status,
+        isRegistered: event.registeredUsers.some(user => user._id.toString() === req.user.userId),
+        createdAt: event.createdAt
+      })),
+      pagination: {
+        current: parseInt(page),
+        pages: Math.ceil(total / limit),
+        total
+      }
+    });
+  } catch (error) {
+    console.error('Get events error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Get upcoming events
+router.get('/upcoming', authenticateToken, async (req, res) => {
+  try {
+    const events = await Event.find({
+      date: { $gte: new Date() },
+      status: 'active'
+    })
+      .populate('organizer', 'name email avatar')
+      .sort({ date: 1 })
+      .limit(20);
+
+    res.json({
+      events: events.map(event => ({
+        id: event._id,
+        title: event.title,
+        description: event.description,
+        date: event.date,
+        time: event.time,
+        location: event.location,
+        category: event.category,
+        maxAttendees: event.maxAttendees,
+        registrationCount: event.registrationCount,
+        thumbnail: event.thumbnail,
+        organizer: event.organizer,
+        isRegistered: event.registeredUsers.some(user => user._id.toString() === req.user.userId)
+      }))
+    });
+  } catch (error) {
+    console.error('Get upcoming events error:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -37,534 +118,282 @@ router.get('/user/registered', authenticateToken, async (req, res) => {
   try {
     const events = await Event.find({
       registeredUsers: req.user.userId,
-      status: { $ne: 'cancelled' }
-    })
-    .populate('organizer', 'name')
-    .sort({ date: 1 });
-
-    // Format events for frontend
-    const formattedEvents = events.map(event => ({
-      id: event._id,
-      title: event.title,
-      description: event.description,
-      category: event.category,
-      date: event.date,
-      time: event.time,
-      location: event.location,
-      thumbnail: {
-        url: event.thumbnail?.url || event.eventImage || null
-      },
-      hostName: event.organizer?.name,
-      registrationCount: (event.registeredUsers || []).length,
-      status: event.status
-    }));
-
-    res.json({
-      success: true,
-      events: formattedEvents
-    });
-  } catch (error) {
-    console.error('Error fetching user events:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch your events'
-    });
-  }
-});
-
-// Get all upcoming events
-router.get('/upcoming', async (req, res) => {
-  try {
-    const { category, search, page = 1, limit = 12 } = req.query;
-    const currentDate = new Date();
-    
-    // Build query
-    const query = {
-      date: { $gte: currentDate },
       status: 'active'
-    };
-
-    if (category && category !== 'All') {
-      query.category = category;
-    }
-
-    if (search) {
-      query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { location: { $regex: search, $options: 'i' } }
-      ];
-    }
-
-    const events = await Event.find(query)
-      .populate('organizer', 'name')
-      .sort({ date: 1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
-
-    const total = await Event.countDocuments(query);
-
-    const formattedEvents = events.map(event => ({
-      id: event._id,
-      title: event.title,
-      description: event.description,
-      category: event.category,
-      date: event.date,
-      time: event.time,
-      location: event.location,
-      thumbnail: {
-        url: event.thumbnail?.url || event.eventImage || null
-      },
-      hostName: event.organizer?.name,
-      registrationCount: (event.registeredUsers || []).length,
-      isRegistered: false,
-      isFull: event.maxAttendees && (event.registeredUsers || []).length >= event.maxAttendees
-    }));
+    })
+      .populate('organizer', 'name email avatar')
+      .sort({ date: 1 });
 
     res.json({
-      success: true,
-      events: formattedEvents,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(total / limit),
-        totalEvents: total
-      }
+      events: events.map(event => ({
+        id: event._id,
+        title: event.title,
+        description: event.description,
+        date: event.date,
+        time: event.time,
+        location: event.location,
+        category: event.category,
+        maxAttendees: event.maxAttendees,
+        registrationCount: event.registrationCount,
+        thumbnail: event.thumbnail,
+        organizer: event.organizer
+      }))
     });
   } catch (error) {
-    console.error('Error fetching upcoming events:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch events'
-    });
+    console.error('Get registered events error:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
-// Get single event details
-router.get('/:id', async (req, res) => {
+// Create event
+router.post('/create', authenticateToken, upload.single('eventImage'), async (req, res) => {
   try {
-    const event = await Event.findById(req.params.id)
-      .populate('organizer', 'name email')
-      .populate('registeredUsers', 'name email');
+    const { title, description, date, time, location, category, maxAttendees } = req.body;
 
-    if (!event) {
-      return res.status(404).json({
-        success: false,
-        message: 'Event not found'
+    // Input validation
+    if (!title || !description || !date || !time || !location) {
+      return res.status(400).json({
+        message: 'All required fields must be provided'
       });
     }
 
-    // Check if user is authenticated and registered
-    let isRegistered = false;
-    let isHost = false;
-    
-    if (req.headers.authorization) {
-      try {
-        const token = req.headers.authorization.split(' ')[1];
-        const jwt = require('jsonwebtoken');
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-        const userId = decoded.userId;
-        
-        isRegistered = event.registeredUsers.some(user => user._id.toString() === userId);
-        isHost = event.organizer._id.toString() === userId;
-      } catch (authError) {
-        // Token is invalid, but we still return the event data
-        console.log('Invalid token for event fetch:', authError.message);
-      }
+    // Validate time format
+    if (!isValidTime(time)) {
+      return res.status(400).json({
+        message: 'Invalid time format. Use HH:MM'
+      });
+    }
+
+    // Validate date
+    const eventDate = new Date(date);
+    if (eventDate <= new Date()) {
+      return res.status(400).json({
+        message: 'Event date must be in the future'
+      });
     }
 
     const eventData = {
-      id: event._id,
-      title: event.title,
-      description: event.description,
-      category: event.category,
-      date: event.date,
-      time: event.time,
-      location: event.location,
-      thumbnail: {
-        url: event.thumbnail?.url || event.eventImage || null
-      },
-      hostName: event.organizer?.name,
-      hostId: event.organizer?._id,
-      registrationCount: (event.registeredUsers || []).length,
-      maxAttendees: event.maxAttendees,
-      status: event.status,
-      isRegistered: isRegistered,
-      isHost: isHost,
-      isFull: event.maxAttendees && (event.registeredUsers || []).length >= event.maxAttendees,
-      registeredUsers: (event.registeredUsers || []).map(user => ({
-        id: user._id,
-        name: user.name,
-        email: user.email
-      }))
+      title: sanitizeString(title),
+      description: sanitizeString(description),
+      date: eventDate,
+      time: sanitizeString(time),
+      location: sanitizeString(location),
+      category: category || 'Other',
+      maxAttendees: parseInt(maxAttendees) || 100,
+      organizer: req.user.userId
     };
 
-    res.json({
-      success: true,
-      event: eventData
-    });
-  } catch (error) {
-    console.error('Error fetching event:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch event details'
-    });
-  }
-});
-
-// Create new event (for CreateEvent page)
-router.post('/create', authenticateToken, upload.single('eventImage'), async (req, res) => {
-  try {
-    const {
-      title,
-      description,
-      category,
-      date,
-      time,
-      location,
-      maxAttendees
-    } = req.body;
-
-    // Handle uploaded image
-    let eventImageUrl = '';
+    // Add thumbnail if uploaded
     if (req.file) {
-      eventImageUrl = `/uploads/events/${req.file.filename}`;
+      eventData.thumbnail = {
+        url: `/uploads/events/${req.file.filename}`,
+        publicId: req.file.filename
+      };
     }
 
-    // Validation
-    if (!title || !description || !category || !date || !time || !location) {
-      return res.status(400).json({
-        success: false,
-        message: 'All required fields must be provided'
-      });
-    }
+    const event = new Event(eventData);
+    const savedEvent = await event.save();
 
-    // Check if date is in the future
-    const eventDate = new Date(date);
-    if (eventDate <= new Date()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Event date must be in the future'
-      });
-    }
-
-    const event = new Event({
-      title,
-      description,
-      category,
-      date: eventDate,
-      time,
-      location,
-      thumbnail: { url: eventImageUrl },
-      maxAttendees: maxAttendees || null,
-      organizer: req.user.userId
-    });
-
-    await event.save();
+    await savedEvent.populate('organizer', 'name email avatar');
 
     res.status(201).json({
-      success: true,
       message: 'Event created successfully',
       event: {
-        id: event._id,
-        title: event.title,
-        description: event.description,
-        category: event.category,
-        date: event.date,
-        time: event.time,
-        location: event.location,
-        maxAttendees: event.maxAttendees,
-        hostName: req.user.username
+        id: savedEvent._id,
+        title: savedEvent.title,
+        description: savedEvent.description,
+        date: savedEvent.date,
+        time: savedEvent.time,
+        location: savedEvent.location,
+        category: savedEvent.category,
+        maxAttendees: savedEvent.maxAttendees,
+        thumbnail: savedEvent.thumbnail,
+        organizer: savedEvent.organizer,
+        status: savedEvent.status
       }
     });
   } catch (error) {
-    console.error('Error creating event:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to create event'
-    });
+    console.error('Create event error:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
-// Create new event (admin CRUD)
-router.post('/', authenticateToken, async (req, res) => {
+// Get event by ID
+router.get('/:id', authenticateToken, async (req, res) => {
   try {
-    const {
-      title,
-      description,
-      category,
-      date,
-      time,
-      location,
-      eventImage,
-      maxAttendees
-    } = req.body;
+    const { id } = req.params;
 
-    // Validation
-    if (!title || !description || !category || !date || !time || !location) {
-      return res.status(400).json({
-        success: false,
-        message: 'All required fields must be provided'
-      });
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid event ID' });
     }
 
-    // Check if date is in the future
-    const eventDate = new Date(date);
-    if (eventDate <= new Date()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Event date must be in the future'
-      });
+    const event = await Event.findById(id)
+      .populate('organizer', 'name email avatar')
+      .populate('registeredUsers', 'name email avatar');
+
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
     }
 
-    const event = new Event({
-      title,
-      description,
-      category,
-      date: eventDate,
-      time,
-      location,
-      thumbnail: { url: eventImageUrl },
-      maxAttendees: maxAttendees || null,
-      organizer: req.user.userId
-    });
+    const isRegistered = event.registeredUsers.some(user => user._id.toString() === req.user.userId);
+    const isHost = event.organizer._id.toString() === req.user.userId;
 
-    await event.save();
-
-    res.status(201).json({
-      success: true,
-      message: 'Event created successfully',
+    res.json({
       event: {
         id: event._id,
         title: event.title,
         description: event.description,
-        category: event.category,
         date: event.date,
         time: event.time,
         location: event.location,
+        category: event.category,
         maxAttendees: event.maxAttendees,
-        hostName: req.user.name
+        registrationCount: event.registrationCount,
+        thumbnail: event.thumbnail,
+        organizer: event.organizer,
+        registeredUsers: event.registeredUsers,
+        status: event.status,
+        isRegistered,
+        isHost,
+        createdAt: event.createdAt
       }
     });
   } catch (error) {
-    console.error('Error creating event:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to create event'
-    });
+    console.error('Get event error:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
 // Register for event
 router.post('/:id/register', authenticateToken, async (req, res) => {
   try {
-    const event = await Event.findById(req.params.id);
+    const { id } = req.params;
 
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid event ID' });
+    }
+
+    const event = await Event.findById(id);
     if (!event) {
-      return res.status(404).json({
-        success: false,
-        message: 'Event not found'
-      });
+      return res.status(404).json({ message: 'Event not found' });
     }
 
-    // Check if event is active
     if (event.status !== 'active') {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot register for this event'
-      });
+      return res.status(400).json({ message: 'Event is not active' });
     }
 
-    // Check if event is in the future
-    if (event.date <= new Date()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot register for past events'
-      });
-    }
-
-    // Check if already registered
     if (event.registeredUsers.includes(req.user.userId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'You are already registered for this event'
-      });
+      return res.status(400).json({ message: 'Already registered for this event' });
     }
 
-    // Check if event is full
-    if (event.maxAttendees && event.registeredUsers.length >= event.maxAttendees) {
-      return res.status(400).json({
-        success: false,
-        message: 'Event is full'
-      });
+    if (event.registeredUsers.length >= event.maxAttendees) {
+      return res.status(400).json({ message: 'Event is full' });
     }
 
-    // Register user
     event.registeredUsers.push(req.user.userId);
     await event.save();
 
-    res.json({
-      success: true,
-      message: 'Successfully registered for the event'
-    });
+    res.json({ message: 'Successfully registered for event' });
   } catch (error) {
-    console.error('Error registering for event:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to register for event'
-    });
+    console.error('Register for event error:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
 // Unregister from event
-router.delete('/:id/unregister', authenticateToken, async (req, res) => {
+router.post('/:id/unregister', authenticateToken, async (req, res) => {
   try {
-    const event = await Event.findById(req.params.id);
+    const { id } = req.params;
 
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid event ID' });
+    }
+
+    const event = await Event.findById(id);
     if (!event) {
-      return res.status(404).json({
-        success: false,
-        message: 'Event not found'
-      });
+      return res.status(404).json({ message: 'Event not found' });
     }
 
-    // Check if registered
-    if (!event.registeredUsers.includes(req.user.userId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'You are not registered for this event'
-      });
-    }
-
-    // Unregister user
     event.registeredUsers = event.registeredUsers.filter(
       userId => userId.toString() !== req.user.userId
     );
     await event.save();
 
-    res.json({
-      success: true,
-      message: 'Successfully unregistered from the event'
-    });
+    res.json({ message: 'Successfully unregistered from event' });
   } catch (error) {
-    console.error('Error unregistering from event:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to unregister from event'
-    });
+    console.error('Unregister from event error:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
-// Update event (Admin CRUD)
+// Update event
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      title,
-      description,
-      category,
-      date,
-      time,
-      location,
-      eventImage,
-      maxAttendees
-    } = req.body;
+    const { title, description, date, time, location, category, maxAttendees, status } = req.body;
 
-    // Validation
-    if (!title || !description || !category || !date || !time || !location) {
-      return res.status(400).json({
-        success: false,
-        message: 'All required fields must be provided'
-      });
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid event ID' });
     }
 
     const event = await Event.findById(id);
     if (!event) {
-      return res.status(404).json({
-        success: false,
-        message: 'Event not found'
-      });
+      return res.status(404).json({ message: 'Event not found' });
     }
 
-    // Check if user is the organizer or admin
+    // Check if user is the organizer
     if (event.organizer.toString() !== req.user.userId) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to update this event'
-      });
+      return res.status(403).json({ message: 'Only the organizer can update this event' });
     }
 
-    // Update event
-    const eventDate = new Date(date);
-    event.title = title;
-    event.description = description;
-    event.category = category;
-    event.date = eventDate;
-    event.time = time;
-    event.location = location;
-    event.maxAttendees = maxAttendees || null;
-    if (eventImage) {
-      event.thumbnail = { url: eventImage };
+    // Update fields
+    if (title) event.title = sanitizeString(title);
+    if (description) event.description = sanitizeString(description);
+    if (date) event.date = new Date(date);
+    if (time) {
+      if (!isValidTime(time)) {
+        return res.status(400).json({ message: 'Invalid time format' });
+      }
+      event.time = sanitizeString(time);
     }
+    if (location) event.location = sanitizeString(location);
+    if (category) event.category = category;
+    if (maxAttendees) event.maxAttendees = parseInt(maxAttendees);
+    if (status) event.status = status;
 
     await event.save();
 
-    res.json({
-      success: true,
-      message: 'Event updated successfully',
-      event: {
-        id: event._id,
-        title: event.title,
-        description: event.description,
-        category: event.category,
-        date: event.date,
-        time: event.time,
-        location: event.location,
-        maxAttendees: event.maxAttendees,
-        hostName: req.user.name
-      }
-    });
+    res.json({ message: 'Event updated successfully' });
   } catch (error) {
-    console.error('Error updating event:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update event'
-    });
+    console.error('Update event error:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
-// Delete event (Admin CRUD)
+// Delete event
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const event = await Event.findById(id);
-    if (!event) {
-      return res.status(404).json({
-        success: false,
-        message: 'Event not found'
-      });
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: 'Invalid event ID' });
     }
 
-    // Check if user is the organizer or admin
+    const event = await Event.findById(id);
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    // Check if user is the organizer
     if (event.organizer.toString() !== req.user.userId) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to delete this event'
-      });
+      return res.status(403).json({ message: 'Only the organizer can delete this event' });
     }
 
     await Event.findByIdAndDelete(id);
 
-    res.json({
-      success: true,
-      message: 'Event deleted successfully'
-    });
+    res.json({ message: 'Event deleted successfully' });
   } catch (error) {
-    console.error('Error deleting event:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to delete event'
-    });
+    console.error('Delete event error:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 

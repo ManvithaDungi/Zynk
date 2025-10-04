@@ -1,56 +1,85 @@
-//frontend/src/pages/Home/Home.js
-"use client"
-
-import { useState, useEffect } from "react"
-import { Link } from "react-router-dom"
-import Navbar from "../../components/Navbar/Navbar"
-import { useAuth } from "../../context/AuthContext"
-import axios from "axios"
-import "./Home.css"
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { Link } from "react-router-dom";
+import Navbar from "../../components/Navbar/Navbar";
+import { useAuth } from "../../context/AuthContext";
+import { eventsAPI } from "../../utils/api";
+import "./Home.css";
 
 const Home = () => {
-  const { user } = useAuth()
-  const [myEvents, setMyEvents] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
+  const { user } = useAuth();
+  const [myEvents, setMyEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Fetch user's registered events
+  const fetchMyEvents = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const response = await eventsAPI.getUserRegistered();
+      setMyEvents(response.data.events || []);
+    } catch (error) {
+      console.error("Error fetching my events:", error);
+      setError("Failed to load your events");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    fetchMyEvents()
-  }, [])
+    fetchMyEvents();
+  }, [fetchMyEvents]);
 
-  const fetchMyEvents = async () => {
-    try {
-      setLoading(true)
-      const response = await axios.get("/api/events/user/registered")
-      setMyEvents(response.data.events)
-    } catch (error) {
-      console.error("Error fetching my events:", error)
-      setError("Failed to load your events")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString)
+  // Memoized date formatting
+  const formatDate = useCallback((dateString) => {
+    const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
-    })
-  }
+    });
+  }, []);
 
-  const formatTime = (timeString) => {
-    return timeString
-  }
+  // Memoized event filtering
+  const { upcomingEvents, pastEvents } = useMemo(() => {
+    const now = new Date();
+    const upcoming = myEvents.filter((event) => new Date(event.date) > now);
+    const past = myEvents.filter((event) => new Date(event.date) <= now);
+    return { upcomingEvents: upcoming, pastEvents: past };
+  }, [myEvents]);
 
-  const isEventUpcoming = (dateString) => {
-    return new Date(dateString) > new Date()
-  }
-
-  const upcomingEvents = myEvents.filter((event) => isEventUpcoming(event.date))
-  const pastEvents = myEvents.filter((event) => !isEventUpcoming(event.date))
+  // Event card component
+  const EventCard = ({ event, isPast = false }) => (
+    <Link to={`/event/${event.id}`} key={event.id} className={`event-card ${isPast ? 'past-event' : ''}`}>
+      <div className="event-card-header">
+        {event.thumbnail?.url && (
+          <img
+            src={event.thumbnail.url}
+            alt={event.title}
+            className="event-image"
+            loading="lazy"
+          />
+        )}
+        <div className="event-category">{event.category}</div>
+      </div>
+      <div className="event-card-content">
+        <h4>{event.title}</h4>
+        <p className="event-description">{event.description}</p>
+        <div className="event-details">
+          <div className="event-date">
+            <strong>📅 {formatDate(event.date)}</strong>
+          </div>
+          <div className="event-time">🕒 {event.time}</div>
+          <div className="event-location">📍 {event.location}</div>
+          <div className="event-host">👤 Hosted by {event.organizer?.name || 'Unknown'}</div>
+        </div>
+        <div className="event-stats">
+          <span>{event.registrationCount} {isPast ? 'attended' : 'registered'}</span>
+        </div>
+      </div>
+    </Link>
+  );
 
   return (
     <div className="home-page">
@@ -98,33 +127,7 @@ const Home = () => {
                     <h3>Upcoming Events ({upcomingEvents.length})</h3>
                     <div className="events-grid">
                       {upcomingEvents.map((event) => (
-                        <Link to={`/event/${event.id}`} key={event.id} className="event-card">
-                          <div className="event-card-header">
-                            {event.eventImage && (
-                              <img
-                                src={event.eventImage || "/placeholder.svg"}
-                                alt={event.title}
-                                className="event-image"
-                              />
-                            )}
-                            <div className="event-category">{event.category}</div>
-                          </div>
-                          <div className="event-card-content">
-                            <h4>{event.title}</h4>
-                            <p className="event-description">{event.description}</p>
-                            <div className="event-details">
-                              <div className="event-date">
-                                <strong>📅 {formatDate(event.date)}</strong>
-                              </div>
-                              <div className="event-time">🕒 {formatTime(event.time)}</div>
-                              <div className="event-location">📍 {event.location}</div>
-                              <div className="event-host">👤 Hosted by {event.hostName}</div>
-                            </div>
-                            <div className="event-stats">
-                              <span>{event.registrationCount} registered</span>
-                            </div>
-                          </div>
-                        </Link>
+                        <EventCard key={event.id} event={event} />
                       ))}
                     </div>
                   </div>
@@ -135,33 +138,7 @@ const Home = () => {
                     <h3>Past Events ({pastEvents.length})</h3>
                     <div className="events-grid">
                       {pastEvents.map((event) => (
-                        <Link to={`/event/${event.id}`} key={event.id} className="event-card past-event">
-                          <div className="event-card-header">
-                            {event.eventImage && (
-                              <img
-                                src={event.eventImage || "/placeholder.svg"}
-                                alt={event.title}
-                                className="event-image"
-                              />
-                            )}
-                            <div className="event-category">{event.category}</div>
-                          </div>
-                          <div className="event-card-content">
-                            <h4>{event.title}</h4>
-                            <p className="event-description">{event.description}</p>
-                            <div className="event-details">
-                              <div className="event-date">
-                                <strong>📅 {formatDate(event.date)}</strong>
-                              </div>
-                              <div className="event-time">🕒 {formatTime(event.time)}</div>
-                              <div className="event-location">📍 {event.location}</div>
-                              <div className="event-host">👤 Hosted by {event.hostName}</div>
-                            </div>
-                            <div className="event-stats">
-                              <span>{event.registrationCount} attended</span>
-                            </div>
-                          </div>
-                        </Link>
+                        <EventCard key={event.id} event={event} isPast={true} />
                       ))}
                     </div>
                   </div>
@@ -188,7 +165,7 @@ const Home = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;

@@ -1,76 +1,127 @@
-"use client"
-
-import { useState, useEffect } from "react"
-import { Link } from "react-router-dom"
-import Navbar from "../../components/Navbar/Navbar"
-import axios from "axios"
-import "./UpcomingEvents.css"
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { Link } from "react-router-dom";
+import Navbar from "../../components/Navbar/Navbar";
+import { eventsAPI } from "../../utils/api";
+import "./UpcomingEvents.css";
 
 const UpcomingEvents = () => {
-  const [events, setEvents] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("All")
-  const [viewMode, setViewMode] = useState("gallery") // 'gallery' or 'timeline'
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [viewMode, setViewMode] = useState("gallery"); // 'gallery' or 'timeline'
 
-  const categories = ["All", "Conference", "Workshop", "Meetup", "Social", "Sports", "Arts", "Music", "Other"]
+  const categories = useMemo(() => [
+    "All", "Conference", "Workshop", "Meetup", "Social", 
+    "Sports", "Arts", "Music", "Other"
+  ], []);
+
+  // Fetch upcoming events
+  const fetchUpcomingEvents = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const response = await eventsAPI.getUpcoming();
+      setEvents(response.data.events || []);
+    } catch (error) {
+      console.error("Error fetching upcoming events:", error);
+      setError("Failed to load upcoming events");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    fetchUpcomingEvents()
-  }, [])
+    fetchUpcomingEvents();
+  }, [fetchUpcomingEvents]);
 
-  const fetchUpcomingEvents = async () => {
-    try {
-      setLoading(true)
-      const response = await axios.get("/api/events/upcoming")
-      setEvents(response.data.events)
-    } catch (error) {
-      console.error("Error fetching upcoming events:", error)
-      setError("Failed to load upcoming events")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString)
+  // Memoized date formatting
+  const formatDate = useCallback((dateString) => {
+    const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
-    })
-  }
+    });
+  }, []);
 
-  const formatTime = (timeString) => {
-    return timeString
-  }
+  // Memoized filtered events
+  const filteredEvents = useMemo(() => {
+    return events.filter((event) => {
+      const matchesSearch = searchTerm === "" || 
+        event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        event.location.toLowerCase().includes(searchTerm.toLowerCase());
 
-  const filteredEvents = events.filter((event) => {
-    const matchesSearch =
-      event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.location.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesCategory = selectedCategory === "All" || event.category === selectedCategory;
 
-    const matchesCategory = selectedCategory === "All" || event.category === selectedCategory
+      return matchesSearch && matchesCategory;
+    });
+  }, [events, searchTerm, selectedCategory]);
 
-    return matchesSearch && matchesCategory
-  })
-
-  const groupEventsByDate = (events) => {
-    const grouped = {}
-    events.forEach((event) => {
-      const dateKey = new Date(event.date).toDateString()
+  // Memoized grouped events for timeline view
+  const groupedEvents = useMemo(() => {
+    const grouped = {};
+    filteredEvents.forEach((event) => {
+      const dateKey = new Date(event.date).toDateString();
       if (!grouped[dateKey]) {
-        grouped[dateKey] = []
+        grouped[dateKey] = [];
       }
-      grouped[dateKey].push(event)
-    })
-    return grouped
-  }
+      grouped[dateKey].push(event);
+    });
+    return grouped;
+  }, [filteredEvents]);
 
-  const groupedEvents = groupEventsByDate(filteredEvents)
+  // Event card component
+  const EventCard = ({ event }) => {
+    const eventImageUrl = event.thumbnail?.url || 
+                         (event.eventImage && typeof event.eventImage === "string" ? event.eventImage : null) ||
+                         "/placeholder.svg";
+
+    return (
+      <Link to={`/event/${event.id}`} key={event.id} className="event-card">
+        <div className="event-card-header">
+          {eventImageUrl && eventImageUrl !== "/placeholder.svg" ? (
+            <img src={eventImageUrl} alt={event.title} className="event-image" loading="lazy" />
+          ) : (
+            <div className="event-placeholder">📅</div>
+          )}
+          <div className="event-category">{event.category}</div>
+        </div>
+        <div className="event-card-content">
+          <h3>{event.title}</h3>
+          <p className="event-description">{event.description}</p>
+          <div className="event-details">
+            <div className="event-date">
+              <strong>📅 {formatDate(event.date)}</strong>
+            </div>
+            <div className="event-time">🕒 {event.time}</div>
+            <div className="event-location">📍 {event.location}</div>
+            <div className="event-host">👤 Hosted by {event.organizer?.name || 'Unknown'}</div>
+          </div>
+          <div className="event-stats">
+            <span>{event.registrationCount} registered</span>
+            <span>{event.likesCount || 0} likes</span>
+          </div>
+        </div>
+      </Link>
+    );
+  };
+
+  // Timeline event card component
+  const TimelineEventCard = ({ event }) => (
+    <Link to={`/event/${event.id}`} key={event.id} className="timeline-event-card">
+      <div className="timeline-event-time">{event.time}</div>
+      <div className="timeline-event-content">
+        <h4>{event.title}</h4>
+        <p className="timeline-event-location">📍 {event.location}</p>
+        <p className="timeline-event-host">👤 {event.organizer?.name || 'Unknown'}</p>
+        <div className="timeline-event-category">{event.category}</div>
+      </div>
+    </Link>
+  );
 
   return (
     <div className="upcoming-events-page">
@@ -158,32 +209,7 @@ const UpcomingEvents = () => {
             <div className="events-gallery">
               <div className="events-grid">
                 {filteredEvents.map((event) => (
-                  <Link to={`/event/${event.id}`} key={event.id} className="event-card">
-                    <div className="event-card-header">
-                      {event.eventImage ? (
-                        <img src={event.eventImage || "/placeholder.svg"} alt={event.title} className="event-image" />
-                      ) : (
-                        <div className="event-placeholder">📅</div>
-                      )}
-                      <div className="event-category">{event.category}</div>
-                    </div>
-                    <div className="event-card-content">
-                      <h3>{event.title}</h3>
-                      <p className="event-description">{event.description}</p>
-                      <div className="event-details">
-                        <div className="event-date">
-                          <strong>📅 {formatDate(event.date)}</strong>
-                        </div>
-                        <div className="event-time">🕒 {formatTime(event.time)}</div>
-                        <div className="event-location">📍 {event.location}</div>
-                        <div className="event-host">👤 Hosted by {event.hostName}</div>
-                      </div>
-                      <div className="event-stats">
-                        <span>{event.registrationCount} registered</span>
-                        <span>{event.likesCount} likes</span>
-                      </div>
-                    </div>
-                  </Link>
+                  <EventCard key={event.id} event={event} />
                 ))}
               </div>
             </div>
@@ -199,15 +225,7 @@ const UpcomingEvents = () => {
                     </div>
                     <div className="timeline-events">
                       {dayEvents.map((event) => (
-                        <Link to={`/event/${event.id}`} key={event.id} className="timeline-event-card">
-                          <div className="timeline-event-time">{formatTime(event.time)}</div>
-                          <div className="timeline-event-content">
-                            <h4>{event.title}</h4>
-                            <p className="timeline-event-location">📍 {event.location}</p>
-                            <p className="timeline-event-host">👤 {event.hostName}</p>
-                            <div className="timeline-event-category">{event.category}</div>
-                          </div>
-                        </Link>
+                        <TimelineEventCard key={event.id} event={event} />
                       ))}
                     </div>
                   </div>
@@ -217,7 +235,7 @@ const UpcomingEvents = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default UpcomingEvents
+export default UpcomingEvents;
