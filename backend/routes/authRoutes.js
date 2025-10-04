@@ -3,11 +3,10 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
-const { MongoClient, ObjectId } = require('mongodb');
+const User = require('../models/User');
 const { authenticateToken } = require('../utils/jwtAuth');
 
 const router = express.Router();
-const client = new MongoClient(process.env.MONGO_URI);
 
 // Generate Token
 const generateToken = (userId, email, username) => {
@@ -45,12 +44,8 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    await client.connect();
-    const db = client.db('zynk');
-    const users = db.collection('users');
-
     // Check for existing user
-    const existingUser = await users.findOne({ $or: [{ email }, { username }] });
+    const existingUser = await User.findOne({ $or: [{ email }, { name: username }] });
     if (existingUser) {
       return res.status(409).json({
         message: 'User with this email or username already exists'
@@ -61,28 +56,24 @@ router.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Create new user
-    const newUser = {
-      name: username, // Map username to name field for User model compatibility
+    const newUser = new User({
+      name: username,
       email,
       password: hashedPassword,
-      role: 'user',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+      role: 'user'
+    });
 
-    const result = await users.insertOne(newUser);
+    const savedUser = await newUser.save();
 
     res.status(201).json({
       message: 'User created successfully',
-      userId: result.insertedId
+      userId: savedUser._id
     });
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({
       message: 'Internal server error'
     });
-  } finally {
-    await client.close();
   }
 });
 
@@ -98,12 +89,8 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    await client.connect();
-    const db = client.db('zynk');
-    const users = db.collection('users');
-
     // Find user
-    const user = await users.findOne({ email });
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({
         message: 'Invalid credentials'
@@ -119,10 +106,11 @@ router.post('/login', async (req, res) => {
     }
 
     // Generate token
-    const token = generateToken(user._id.toString(), user.email, user.name || user.username);
+    const token = generateToken(user._id.toString(), user.email, user.name);
 
     // Update last login
-    await users.updateOne({ _id: user._id }, { $set: { lastLogin: new Date() } });
+    user.lastLogin = new Date();
+    await user.save();
 
     // Set cookie
     res.cookie('token', token, {
@@ -136,7 +124,7 @@ router.post('/login', async (req, res) => {
       message: 'Login successful',
       user: {
         id: user._id,
-        username: user.username,
+        name: user.name,
         email: user.email,
         avatar: user.avatar,
         bio: user.bio,
@@ -147,19 +135,13 @@ router.post('/login', async (req, res) => {
     res.status(500).json({
       message: 'Internal server error'
     });
-  } finally {
-    await client.close();
   }
 });
 
 // Get current user
 router.get('/me', authenticateToken, async (req, res) => {
   try {
-    await client.connect();
-    const db = client.db('zynk');
-    const users = db.collection('users');
-
-    const user = await users.findOne({ _id: new ObjectId(req.user.userId) });
+    const user = await User.findById(req.user.userId);
     if (!user) {
       return res.status(404).json({
         message: 'User not found'
@@ -169,7 +151,7 @@ router.get('/me', authenticateToken, async (req, res) => {
     res.json({
       user: {
         id: user._id,
-        username: user.username,
+        name: user.name,
         email: user.email,
         avatar: user.avatar,
         bio: user.bio,
@@ -186,8 +168,6 @@ router.get('/me', authenticateToken, async (req, res) => {
     res.status(500).json({
       message: 'Internal server error'
     });
-  } finally {
-    await client.close();
   }
 });
 

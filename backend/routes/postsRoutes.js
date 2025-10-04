@@ -1,14 +1,13 @@
 const express = require('express');
-const { MongoClient, ObjectId } = require('mongodb');
+const Post = require('../models/Post');
+const User = require('../models/User');
 const { authenticateToken } = require('../utils/jwtAuth');
 
 const router = express.Router();
-const client = new MongoClient(process.env.MONGO_URI);
 
 // Get posts (feed)
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    await client.connect();
     const db = client.db('zynk');
     const posts = db.collection('posts');
     const users = db.collection('users');
@@ -65,7 +64,6 @@ router.get('/', authenticateToken, async (req, res) => {
     console.error('Get posts error:', error);
     res.status(500).json({ message: 'Internal server error' });
   } finally {
-    await client.close();
   }
 });
 
@@ -77,7 +75,6 @@ router.post('/', authenticateToken, async (req, res) => {
       return res.status(400).json({ message: 'Post content or images are required' });
     }
 
-    await client.connect();
     const db = client.db('zynk');
     const posts = db.collection('posts');
     const users = db.collection('users');
@@ -100,7 +97,6 @@ router.post('/', authenticateToken, async (req, res) => {
     console.error('Create post error:', error);
     res.status(500).json({ message: 'Internal server error' });
   } finally {
-    await client.close();
   }
 });
 
@@ -109,7 +105,6 @@ router.get('/:postId', authenticateToken, async (req, res) => {
   try {
     const { postId } = req.params;
 
-    await client.connect();
     const db = client.db('zynk');
     const posts = db.collection('posts');
 
@@ -159,7 +154,6 @@ router.get('/:postId', authenticateToken, async (req, res) => {
     console.error('Get post error:', error);
     res.status(500).json({ message: 'Internal server error' });
   } finally {
-    await client.close();
   }
 });
 
@@ -172,7 +166,6 @@ router.put('/:postId', authenticateToken, async (req, res) => {
       return res.status(400).json({ message: 'Post content or images are required' });
     }
 
-    await client.connect();
     const db = client.db('zynk');
     const posts = db.collection('posts');
 
@@ -195,7 +188,6 @@ router.put('/:postId', authenticateToken, async (req, res) => {
     console.error('Update post error:', error);
     res.status(500).json({ message: 'Internal server error' });
   } finally {
-    await client.close();
   }
 });
 
@@ -204,7 +196,6 @@ router.delete('/:postId', authenticateToken, async (req, res) => {
   try {
     const { postId } = req.params;
 
-    await client.connect();
     const db = client.db('zynk');
     const posts = db.collection('posts');
     const users = db.collection('users');
@@ -226,7 +217,6 @@ router.delete('/:postId', authenticateToken, async (req, res) => {
     console.error('Delete post error:', error);
     res.status(500).json({ message: 'Internal server error' });
   } finally {
-    await client.close();
   }
 });
 
@@ -235,7 +225,6 @@ router.post('/:postId/like', authenticateToken, async (req, res) => {
   try {
     const { postId } = req.params;
 
-    await client.connect();
     const db = client.db('zynk');
     const posts = db.collection('posts');
 
@@ -266,7 +255,6 @@ router.post('/:postId/like', authenticateToken, async (req, res) => {
     console.error('Like post error:', error);
     res.status(500).json({ message: 'Internal server error' });
   } finally {
-    await client.close();
   }
 });
 
@@ -280,7 +268,6 @@ router.post('/:postId/comments', authenticateToken, async (req, res) => {
       return res.status(400).json({ message: 'Comment content is required' });
     }
 
-    await client.connect();
     const db = client.db('zynk');
     const posts = db.collection('posts');
 
@@ -309,7 +296,6 @@ router.post('/:postId/comments', authenticateToken, async (req, res) => {
     console.error('Add comment error:', error);
     res.status(500).json({ message: 'Internal server error' });
   } finally {
-    await client.close();
   }
 });
 

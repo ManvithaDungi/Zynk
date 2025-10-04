@@ -1,16 +1,13 @@
 const express = require('express');
-const { MongoClient, ObjectId } = require('mongodb');
+const User = require('../models/User');
+const Post = require('../models/Post');
 const { authenticateToken } = require('../utils/jwtAuth');
 
 const router = express.Router();
-const client = new MongoClient(process.env.MONGO_URI);
 
 // Get trending posts
 router.get('/posts', authenticateToken, async (req, res) => {
   try {
-    await client.connect();
-    const db = client.db('zynk');
-    const posts = db.collection('posts');
 
     const trendingPosts = await posts
       .aggregate([
@@ -56,15 +53,12 @@ router.get('/posts', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Get trending posts error:', error);
     res.status(500).json({ message: 'Internal server error' });
-  } finally {
-    await client.close();
   }
 });
 
 // Get trending users
 router.get('/users', authenticateToken, async (req, res) => {
   try {
-    await client.connect();
     const db = client.db('zynk');
     const users = db.collection('users');
 
@@ -107,17 +101,12 @@ router.get('/users', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Get trending users error:', error);
     res.status(500).json({ message: 'Internal server error' });
-  } finally {
-    await client.close();
   }
 });
 
 // Get trending content (combined)
 router.get('/trending', authenticateToken, async (req, res) => {
   try {
-    await client.connect();
-    const db = client.db('zynk');
-    const posts = db.collection('posts');
     const users = db.collection('users');
 
     // Get trending posts
@@ -196,8 +185,6 @@ router.get('/trending', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Get trending content error:', error);
     res.status(500).json({ message: 'Internal server error' });
-  } finally {
-    await client.close();
   }
 });
 

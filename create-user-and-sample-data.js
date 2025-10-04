@@ -8,15 +8,33 @@ const apiClient = axios.create({
   withCredentials: true
 });
 
-async function createSampleData() {
-  console.log('🚀 Creating sample events and posts...');
+async function createUserAndSampleData() {
+  console.log('🚀 Creating user and sample data...');
   
   try {
-    // First, login with an existing user to get auth token
-    console.log('🔐 Logging in with existing user...');
+    // First, try to register a new user
+    console.log('👤 Registering new user...');
+    try {
+      const registerResponse = await apiClient.post('/auth/register', {
+        username: 'sample_user',
+        email: 'sample@example.com',
+        password: 'sample123'
+      });
+      console.log('✅ User registered successfully');
+    } catch (registerError) {
+      if (registerError.response?.data?.message?.includes('already exists')) {
+        console.log('ℹ️ User already exists, proceeding with login...');
+      } else {
+        console.log('❌ Registration failed:', registerError.response?.data?.message || registerError.message);
+        return;
+      }
+    }
+
+    // Login with the user
+    console.log('🔐 Logging in...');
     const loginResponse = await apiClient.post('/auth/login', {
-      email: 'john@example.com',
-      password: 'password123'
+      email: 'sample@example.com',
+      password: 'sample123'
     });
     
     console.log('✅ Login successful');
@@ -29,30 +47,30 @@ async function createSampleData() {
         description: 'Join us for the biggest tech conference of the year featuring the latest innovations in AI, blockchain, and cloud computing.',
         date: '2024-03-15',
         time: '09:00',
-        location: 'Convention Center, Downtown',
+        location: 'Convention Center, San Francisco',
         category: 'Conference',
         maxAttendees: 500
       },
       {
         title: 'React Workshop',
-        description: 'Learn React fundamentals and best practices in this hands-on workshop. Perfect for beginners and intermediate developers.',
+        description: 'Learn React from scratch with hands-on exercises and real-world projects.',
         date: '2024-03-20',
         time: '14:00',
-        location: 'Tech Hub, Innovation District',
+        location: 'Tech Hub, New York',
         category: 'Workshop',
         maxAttendees: 50
       },
       {
         title: 'Networking Meetup',
-        description: 'Connect with fellow developers, entrepreneurs, and tech enthusiasts. Great opportunity to expand your professional network.',
+        description: 'Connect with fellow developers and entrepreneurs in a casual networking environment.',
         date: '2024-03-25',
-        time: '18:30',
-        location: 'The Coffee House, Main Street',
-        category: 'Meetup',
+        time: '18:00',
+        location: 'Downtown Cafe, Seattle',
+        category: 'Social',
         maxAttendees: 100
       }
     ];
-    
+
     const createdEvents = [];
     for (const eventData of events) {
       try {
@@ -63,7 +81,7 @@ async function createSampleData() {
         console.log(`❌ Failed to create event: ${eventData.title} - ${error.response?.data?.message || error.message}`);
       }
     }
-    
+
     // Create sample albums
     console.log('📸 Creating sample albums...');
     const albums = [
@@ -83,7 +101,7 @@ async function createSampleData() {
         eventId: createdEvents[2]?.id
       }
     ];
-    
+
     const createdAlbums = [];
     for (const albumData of albums) {
       try {
@@ -94,7 +112,7 @@ async function createSampleData() {
         console.log(`❌ Failed to create album: ${albumData.name} - ${error.response?.data?.message || error.message}`);
       }
     }
-    
+
     // Create sample posts (memories)
     console.log('💭 Creating sample posts...');
     const posts = [
@@ -126,26 +144,28 @@ async function createSampleData() {
         }]
       }
     ];
-    
+
+    let postsCreated = 0;
     for (const postData of posts) {
       try {
         const postResponse = await apiClient.post('/posts', postData);
+        postsCreated++;
         console.log(`✅ Created post in album: ${postData.album}`);
       } catch (error) {
         console.log(`❌ Failed to create post - ${error.response?.data?.message || error.message}`);
       }
     }
-    
+
     console.log('🎉 Sample data creation completed!');
     console.log('📊 Summary:');
     console.log(`📅 Events created: ${createdEvents.length}`);
     console.log(`📸 Albums created: ${createdAlbums.length}`);
-    console.log(`💭 Posts created: ${posts.length}`);
+    console.log(`💭 Posts created: ${postsCreated}`);
     console.log('✅ You can now test the EventDetail page and other features!');
-    
+
   } catch (error) {
-    console.error('❌ Error creating sample data:', error.response?.data?.message || error.message);
+    console.error('❌ Error creating sample data:', error);
   }
 }
 
-createSampleData();
+createUserAndSampleData();

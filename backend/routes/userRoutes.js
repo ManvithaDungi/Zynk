@@ -1,27 +1,23 @@
 const express = require('express');
-const { MongoClient, ObjectId } = require('mongodb');
+const User = require('../models/User');
 const { authenticateToken } = require('../utils/jwtAuth');
 
 const router = express.Router();
-const client = new MongoClient(process.env.MONGO_URI);
 
 // Get user profile
 router.get('/:userId', authenticateToken, async (req, res) => {
   try {
     const { userId } = req.params;
 
-    await client.connect();
-    const db = client.db('zynk');
-    const users = db.collection('users');
-
-    const user = await users.findOne({ _id: new ObjectId(userId) });
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     const userProfile = {
       id: user._id.toString(),
-      username: user.username,
+      name: user.name,
+      email: user.email,
       avatar: user.avatar,
       bio: user.bio || '',
       followers: user.followers || [],
@@ -36,8 +32,6 @@ router.get('/:userId', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Get user profile error:', error);
     res.status(500).json({ message: 'Internal server error' });
-  } finally {
-    await client.close();
   }
 });
 
@@ -47,9 +41,6 @@ router.get('/:userId/posts', authenticateToken, async (req, res) => {
     const { userId } = req.params;
     const { type = 'posts' } = req.query;
 
-    await client.connect();
-    const db = client.db('zynk');
-    const posts = db.collection('posts');
 
     let query = {};
     if (type === 'posts') {
@@ -103,8 +94,6 @@ router.get('/:userId/posts', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Get user posts error:', error);
     res.status(500).json({ message: 'Internal server error' });
-  } finally {
-    await client.close();
   }
 });
 
@@ -118,9 +107,6 @@ router.post('/:userId/follow', authenticateToken, async (req, res) => {
       return res.status(400).json({ message: 'You cannot follow yourself' });
     }
 
-    await client.connect();
-    const db = client.db('zynk');
-    const users = db.collection('users');
 
     const targetUser = await users.findOne({ _id: new ObjectId(userId) });
     if (!targetUser) {
@@ -156,8 +142,6 @@ router.post('/:userId/follow', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Follow user error:', error);
     res.status(500).json({ message: 'Internal server error' });
-  } finally {
-    await client.close();
   }
 });
 
@@ -167,9 +151,6 @@ router.put('/profile', authenticateToken, async (req, res) => {
     const { username, bio, avatar } = req.body;
     const userId = req.user.userId;
 
-    await client.connect();
-    const db = client.db('zynk');
-    const users = db.collection('users');
 
     // Check if username is already taken by another user
     if (username) {
@@ -199,8 +180,6 @@ router.put('/profile', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Update profile error:', error);
     res.status(500).json({ message: 'Internal server error' });
-  } finally {
-    await client.close();
   }
 });
 
@@ -209,9 +188,6 @@ router.get('/', authenticateToken, async (req, res) => {
   try {
     const { search } = req.query;
 
-    await client.connect();
-    const db = client.db('zynk');
-    const users = db.collection('users');
 
     let query = { _id: { $ne: new ObjectId(req.user.userId) } };
     
@@ -248,8 +224,6 @@ router.get('/', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Get users error:', error);
     res.status(500).json({ message: 'Internal server error' });
-  } finally {
-    await client.close();
   }
 });
 
@@ -274,9 +248,6 @@ router.put('/:userId', authenticateToken, async (req, res) => {
       });
     }
 
-    await client.connect();
-    const db = client.db('zynk');
-    const users = db.collection('users');
 
     // Check if email is already taken by another user
     const existingUser = await users.findOne({ 
@@ -323,8 +294,6 @@ router.put('/:userId', authenticateToken, async (req, res) => {
     res.status(500).json({
       message: 'Internal server error'
     });
-  } finally {
-    await client.close();
   }
 });
 
@@ -333,9 +302,6 @@ router.delete('/:userId', authenticateToken, async (req, res) => {
   try {
     const { userId } = req.params;
 
-    await client.connect();
-    const db = client.db('zynk');
-    const users = db.collection('users');
 
     // Check if user exists
     const user = await users.findOne({ _id: new ObjectId(userId) });
@@ -362,8 +328,6 @@ router.delete('/:userId', authenticateToken, async (req, res) => {
     res.status(500).json({
       message: 'Internal server error'
     });
-  } finally {
-    await client.close();
   }
 });
 

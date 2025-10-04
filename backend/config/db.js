@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
-    const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/zynk'
+    const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/zynk?ssl=false'
     if (!process.env.MONGO_URI) {
       console.warn('[DB] MONGO_URI not set. Using default:', mongoUri)
     }
@@ -12,6 +12,8 @@ const connectDB = async () => {
       useUnifiedTopology: true,
       ssl: false,
       sslValidate: false,
+      tls: false,
+      tlsInsecure: true,
     });
 
     console.log(`MongoDB Connected: ${conn.connection.host}`);

@@ -1,9 +1,9 @@
 const express = require('express');
-const { MongoClient } = require('mongodb');
+const User = require('../models/User');
+const Post = require('../models/Post');
 const { authenticateToken } = require('../utils/jwtAuth');
 
 const router = express.Router();
-const client = new MongoClient(process.env.MONGO_URI);
 
 // Search users and posts
 router.get('/', authenticateToken, async (req, res) => {
@@ -13,10 +13,6 @@ router.get('/', authenticateToken, async (req, res) => {
       return res.status(400).json({ message: 'Search query is required' });
     }
 
-    await client.connect();
-    const db = client.db('zynk');
-    const users = db.collection('users');
-    const posts = db.collection('posts');
 
     const searchRegex = new RegExp(query.trim(), 'i');
 
@@ -85,8 +81,6 @@ router.get('/', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Search error:', error);
     res.status(500).json({ message: 'Internal server error' });
-  } finally {
-    await client.close();
   }
 });
 
