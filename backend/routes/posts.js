@@ -3,7 +3,7 @@ const express = require("express")
 const router = express.Router()
 const multer = require("multer")
 const path = require("path")
-const authenticate = require("../middleware/auth")
+const { authenticateTokenToken } = require("../utils/jwtAuth")
 const Post = require("../models/Post")
 const Album = require("../models/Album")
 
@@ -33,7 +33,7 @@ const upload = multer({
 })
 
 // Create new post with media
-router.post("/", authenticate, upload.array("media", 10), async (req, res) => {
+router.post("/", authenticateTokenToken, upload.array("media", 10), async (req, res) => {
   try {
     const { albumId, caption } = req.body
     const files = req.files
@@ -43,7 +43,7 @@ router.post("/", authenticate, upload.array("media", 10), async (req, res) => {
     }
 
     // Verify album belongs to user
-    const album = await Album.findOne({ _id: albumId, user: req.user._id })
+    const album = await Album.findOne({ _id: albumId, user: req.user.userId })
     if (!album) {
       return res.status(404).json({ error: "Album not found" })
     }
@@ -67,7 +67,7 @@ router.post("/", authenticate, upload.array("media", 10), async (req, res) => {
     const post = new Post({
       caption: caption || "",
       album: albumId,
-      user: req.user._id,
+      createdBy: req.user.userId,
       media: media
     })
 
@@ -82,11 +82,11 @@ router.post("/", authenticate, upload.array("media", 10), async (req, res) => {
 })
 
 // Get single post
-router.get("/:postId", authenticate, async (req, res) => {
+router.get("/:postId", authenticateToken, async (req, res) => {
   try {
     const { postId } = req.params
 
-    const post = await Post.findOne({ _id: postId, user: req.user._id })
+    const post = await Post.findOne({ _id: postId, user: req.user.userId })
       .populate('user', 'name email')
       .populate('album', 'title')
 
@@ -102,12 +102,12 @@ router.get("/:postId", authenticate, async (req, res) => {
 })
 
 // Get all posts for an album
-router.get("/album/:albumId", authenticate, async (req, res) => {
+router.get("/album/:albumId", authenticateToken, async (req, res) => {
   try {
     const { albumId } = req.params
 
     // Verify album belongs to user
-    const album = await Album.findOne({ _id: albumId, user: req.user._id })
+    const album = await Album.findOne({ _id: albumId, user: req.user.userId })
     if (!album) {
       return res.status(404).json({ error: "Album not found" })
     }
@@ -124,13 +124,13 @@ router.get("/album/:albumId", authenticate, async (req, res) => {
 })
 
 // Update post caption
-router.put("/:postId", authenticate, async (req, res) => {
+router.put("/:postId", authenticateToken, async (req, res) => {
   try {
     const { postId } = req.params
     const { caption } = req.body
 
     const post = await Post.findOneAndUpdate(
-      { _id: postId, user: req.user._id },
+      { _id: postId, user: req.user.userId },
       { caption },
       { new: true }
     ).populate('user', 'name email')
@@ -147,11 +147,11 @@ router.put("/:postId", authenticate, async (req, res) => {
 })
 
 // Delete post
-router.delete("/:postId", authenticate, async (req, res) => {
+router.delete("/:postId", authenticateToken, async (req, res) => {
   try {
     const { postId } = req.params
 
-    const post = await Post.findOneAndDelete({ _id: postId, user: req.user._id })
+    const post = await Post.findOneAndDelete({ _id: postId, user: req.user.userId })
 
     if (!post) {
       return res.status(404).json({ error: "Post not found" })
@@ -165,10 +165,10 @@ router.delete("/:postId", authenticate, async (req, res) => {
 })
 
 // Like/Unlike post
-router.post("/:postId/like", authenticate, async (req, res) => {
+router.post("/:postId/like", authenticateToken, async (req, res) => {
   try {
     const { postId } = req.params
-    const userId = req.user._id
+    const userId = req.user.userId
 
     const post = await Post.findById(postId)
     if (!post) {
@@ -198,7 +198,7 @@ router.post("/:postId/like", authenticate, async (req, res) => {
 })
 
 // Add comment to post
-router.post("/:postId/comments", authenticate, async (req, res) => {
+router.post("/:postId/comments", authenticateToken, async (req, res) => {
   try {
     const { postId } = req.params
     const { text } = req.body
@@ -213,7 +213,7 @@ router.post("/:postId/comments", authenticate, async (req, res) => {
     }
 
     post.comments.push({
-      user: req.user._id,
+      createdBy: req.user.userId,
       text: text.trim()
     })
 
@@ -229,10 +229,10 @@ router.post("/:postId/comments", authenticate, async (req, res) => {
 })
 
 // Delete comment
-router.delete("/:postId/comments/:commentId", authenticate, async (req, res) => {
+router.delete("/:postId/comments/:commentId", authenticateToken, async (req, res) => {
   try {
     const { postId, commentId } = req.params
-    const userId = req.user._id
+    const userId = req.user.userId
 
     const post = await Post.findById(postId)
     if (!post) {

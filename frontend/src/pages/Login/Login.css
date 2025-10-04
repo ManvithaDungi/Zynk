@@ -11,10 +11,22 @@
   width: 100%;
   max-width: 450px;
   background-color: #ffffff;
-  border: 2px solid #000000;
-  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
   padding: 40px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #000000 0%, #333333 50%, #000000 100%);
 }
 
 .login-header {
@@ -26,8 +38,8 @@
   font-size: 48px;
   font-weight: 700;
   color: #000000;
-  margin-bottom: 8px;
-  letter-spacing: -1px;
+  margin-bottom: 16px;
+  letter-spacing: -0.02em;
 }
 
 .login-subtitle {

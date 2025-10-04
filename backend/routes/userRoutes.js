@@ -253,4 +253,118 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
+// Update user (Admin CRUD)
+router.put('/:userId', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { name, email } = req.body;
+
+    // Basic validation
+    if (!name || !email) {
+      return res.status(400).json({
+        message: 'Name and email are required'
+      });
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        message: 'Please enter a valid email address'
+      });
+    }
+
+    await client.connect();
+    const db = client.db('zynk');
+    const users = db.collection('users');
+
+    // Check if email is already taken by another user
+    const existingUser = await users.findOne({ 
+      email, 
+      _id: { $ne: new ObjectId(userId) } 
+    });
+    if (existingUser) {
+      return res.status(409).json({
+        message: 'Email already taken by another user'
+      });
+    }
+
+    const updateData = {
+      username: name, // Using username field for name
+      email: email,
+      updatedAt: new Date(),
+    };
+
+    const result = await users.updateOne(
+      { _id: new ObjectId(userId) },
+      { $set: updateData }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({
+        message: 'User not found'
+      });
+    }
+
+    // Get updated user
+    const updatedUser = await users.findOne({ _id: new ObjectId(userId) });
+
+    res.json({
+      message: 'User updated successfully',
+      user: {
+        id: updatedUser._id.toString(),
+        name: updatedUser.username,
+        email: updatedUser.email,
+        createdAt: updatedUser.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Update user error:', error);
+    res.status(500).json({
+      message: 'Internal server error'
+    });
+  } finally {
+    await client.close();
+  }
+});
+
+// Delete user (Admin CRUD)
+router.delete('/:userId', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    await client.connect();
+    const db = client.db('zynk');
+    const users = db.collection('users');
+
+    // Check if user exists
+    const user = await users.findOne({ _id: new ObjectId(userId) });
+    if (!user) {
+      return res.status(404).json({
+        message: 'User not found'
+      });
+    }
+
+    // Delete user
+    const result = await users.deleteOne({ _id: new ObjectId(userId) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({
+        message: 'User not found'
+      });
+    }
+
+    res.json({
+      message: 'User deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({
+      message: 'Internal server error'
+    });
+  } finally {
+    await client.close();
+  }
+});
+
 module.exports = router;

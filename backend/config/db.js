@@ -10,6 +10,8 @@ const connectDB = async () => {
     const conn = await mongoose.connect(mongoUri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      ssl: false,
+      sslValidate: false,
     });
 
     console.log(`MongoDB Connected: ${conn.connection.host}`);

@@ -27,7 +27,7 @@ const authLimiter = rateLimit({
 });
 
 // Register
-router.post('/register', authLimiter, async (req, res) => {
+router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
@@ -62,16 +62,10 @@ router.post('/register', authLimiter, async (req, res) => {
 
     // Create new user
     const newUser = {
-      username,
+      name: username, // Map username to name field for User model compatibility
       email,
       password: hashedPassword,
-      avatar: null,
-      bio: '',
-      followers: [],
-      following: [],
-      postsCount: 0,
-      isVerified: false,
-      isPrivate: false,
+      role: 'user',
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -93,7 +87,7 @@ router.post('/register', authLimiter, async (req, res) => {
 });
 
 // Login
-router.post('/login', authLimiter, async (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -125,7 +119,7 @@ router.post('/login', authLimiter, async (req, res) => {
     }
 
     // Generate token
-    const token = generateToken(user._id.toString(), user.email, user.username);
+    const token = generateToken(user._id.toString(), user.email, user.name || user.username);
 
     // Update last login
     await users.updateOne({ _id: user._id }, { $set: { lastLogin: new Date() } });

@@ -3,7 +3,7 @@ const Album = require("../models/Album")
 const Memory = require("../models/Memory")
 const Event = require("../models/Event")
 const User = require("../models/User")
-const auth = require('../middleware/auth');
+const { authenticateToken } = require('../utils/jwtAuth');
 
 const router = express.Router()
 
@@ -13,8 +13,114 @@ const sanitizeInput = (value) => {
   return value.replace(/<[^>]*>?/gm, "").trim()
 }
 
+// Get user's albums (for Albums page)
+router.get("/", authenticateToken, async (req, res) => {
+  try {
+    const albums = await Album.find({ createdBy: req.user.userId })
+      .populate("createdBy", "name email")
+      .sort({ createdAt: -1 })
+
+    res.json({
+      albums: albums.map((album) => ({
+        id: album._id,
+        name: album.title, // Frontend expects 'name' field
+        description: album.description,
+        coverImage: album.coverImage,
+        createdBy: album.createdBy,
+        postCount: album.memories ? album.memories.length : 0,
+        createdAt: album.createdAt,
+      })),
+    })
+  } catch (error) {
+    console.error("Get user albums error:", error)
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : "Internal server error",
+    })
+  }
+})
+
+// Create album (for Albums page - without eventId)
+router.post("/", authenticateToken, async (req, res) => {
+  try {
+    const { name, description } = req.body
+
+    if (!name) {
+      return res.status(400).json({
+        message: "Album name is required",
+      })
+    }
+
+    const album = new Album({
+      title: sanitizeInput(name), // Store as 'title' in DB
+      description: sanitizeInput(description || ""),
+      createdBy: req.user.userId,
+      event: null, // Albums page doesn't require event
+    })
+
+    await album.save()
+
+    const populatedAlbum = await Album.findById(album._id).populate("createdBy", "name email")
+
+    res.status(201).json({
+      message: "Album created successfully",
+      album: {
+        id: populatedAlbum._id,
+        name: populatedAlbum.title, // Return as 'name' for frontend
+        description: populatedAlbum.description,
+        coverImage: populatedAlbum.coverImage,
+        createdBy: populatedAlbum.createdBy,
+        postCount: 0,
+        createdAt: populatedAlbum.createdAt,
+      },
+    })
+  } catch (error) {
+    console.error("Create album error:", error)
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : "Internal server error",
+    })
+  }
+})
+
+// Get posts for an album (for Albums page)
+router.get("/:id/posts", authenticateToken, async (req, res) => {
+  try {
+    const album = await Album.findById(req.params.id)
+      .populate("memories")
+
+    if (!album) {
+      return res.status(404).json({ message: "Album not found" })
+    }
+
+    // Check if user owns the album
+    if (album.createdBy.toString() !== req.user.userId) {
+      return res.status(403).json({ message: "Access denied" })
+    }
+
+    // Convert memories to posts format expected by frontend
+    const posts = album.memories.map((memory) => ({
+      id: memory._id,
+      caption: memory.description || "",
+      media: memory.mediaUrl ? [{
+        url: memory.mediaUrl,
+        type: memory.mediaType || "image"
+      }] : [],
+      createdAt: memory.createdAt,
+    }))
+
+    res.json({ posts })
+  } catch (error) {
+    console.error("Get album posts error:", error)
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : "Internal server error",
+    })
+  }
+})
+
 // Get albums for an event
-router.get("/event/:eventId", auth, async (req, res) => {
+router.get("/event/:eventId", authenticateToken, async (req, res) => {
   try {
     const { eventId } = req.params
 
@@ -24,10 +130,10 @@ router.get("/event/:eventId", auth, async (req, res) => {
       return res.status(404).json({ message: "Event not found" })
     }
 
-    const isHost = (event.organizer?.toString?.() || event.host?.toString?.()) === req.user.id
+    const isHost = (event.organizer?.toString?.() || event.host?.toString?.()) === req.user.userId
     const isRegistered = (event.attendees || event.registeredUsers || []).some((reg) => {
       const regId = reg.user ? reg.user.toString() : reg.toString()
-      return regId === req.user.id
+      return regId === req.user.userId
     })
 
     if (!isHost && !isRegistered) {
@@ -77,7 +183,7 @@ router.get("/event/:eventId", auth, async (req, res) => {
 })
 
 // Create new album
-router.post("/", auth, async (req, res) => {
+router.post("/", authenticateToken, async (req, res) => {
   try {
     const { title, description, eventId, coverImage } = req.body
 
@@ -93,10 +199,10 @@ router.post("/", auth, async (req, res) => {
       return res.status(404).json({ message: "Event not found" })
     }
 
-    const isHost = (event.organizer?.toString?.() || event.host?.toString?.()) === req.user.id
+    const isHost = (event.organizer?.toString?.() || event.host?.toString?.()) === req.user.userId
     const isRegistered = (event.attendees || event.registeredUsers || []).some((reg) => {
       const regId = reg.user ? reg.user.toString() : reg.toString()
-      return regId === req.user.id
+      return regId === req.user.userId
     })
 
     if (!isHost && !isRegistered) {
@@ -107,7 +213,7 @@ router.post("/", auth, async (req, res) => {
       title: sanitizeInput(title),
       description: sanitizeInput(description || ""),
       event: eventId,
-      createdBy: req.user.id,
+      createdBy: req.user.userId,
       coverImage: sanitizeInput(coverImage || ""),
     })
 
@@ -143,7 +249,7 @@ router.post("/", auth, async (req, res) => {
 })
 
 // Get album by ID
-router.get("/:id", auth, async (req, res) => {
+router.get("/:id", authenticateToken, async (req, res) => {
   try {
     const album = await Album.findById(req.params.id)
       .populate("createdBy", "name email")
@@ -171,10 +277,10 @@ router.get("/:id", auth, async (req, res) => {
     }
 
     // Check access
-    const isHost = (album.event.organizer?.toString?.() || album.event.host?.toString?.()) === req.user.id
+    const isHost = (album.event.organizer?.toString?.() || album.event.host?.toString?.()) === req.user.userId
     const isRegistered = (album.event.attendees || album.event.registeredUsers || []).some((reg) => {
       const regId = reg.user ? reg.user.toString() : reg.toString()
-      return regId === req.user.id
+      return regId === req.user.userId
     })
 
     if (!isHost && !isRegistered) {
@@ -200,7 +306,7 @@ router.get("/:id", auth, async (req, res) => {
           comments: memory.comments,
           likesCount: memory.likesCount,
           commentsCount: memory.commentsCount,
-          isLikedByUser: memory.likes.some((like) => like.user._id.toString() === req.user.id),
+          isLikedByUser: memory.likes.some((like) => like.user._id.toString() === req.user.userId),
           createdAt: memory.createdAt,
         })),
         createdAt: album.createdAt,
@@ -216,7 +322,7 @@ router.get("/:id", auth, async (req, res) => {
 })
 
 // Update album
-router.put("/:id", auth, async (req, res) => {
+router.put("/:id", authenticateToken, async (req, res) => {
   try {
     const { title, description, coverImage } = req.body
 
@@ -226,7 +332,7 @@ router.put("/:id", auth, async (req, res) => {
     }
 
     // Check if user is the creator
-    if (album.createdBy.toString() !== req.user.id) {
+    if (album.createdBy.toString() !== req.user.userId) {
       return res.status(403).json({ message: "Access denied. You can only edit your own albums." })
     }
 
@@ -261,7 +367,7 @@ router.put("/:id", auth, async (req, res) => {
 })
 
 // Delete album
-router.delete("/:id", auth, async (req, res) => {
+router.delete("/:id", authenticateToken, async (req, res) => {
   try {
     const album = await Album.findById(req.params.id)
     if (!album) {
@@ -269,7 +375,7 @@ router.delete("/:id", auth, async (req, res) => {
     }
 
     // Check if user is the creator
-    if (album.createdBy.toString() !== req.user.id) {
+    if (album.createdBy.toString() !== req.user.userId) {
       return res.status(403).json({ message: "Access denied. You can only delete your own albums." })
     }
 
