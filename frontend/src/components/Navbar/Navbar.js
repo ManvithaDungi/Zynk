@@ -40,6 +40,20 @@ const Navbar = () => {
           </Link>
 
           <Link 
+            to="/privacy-manager" 
+            className={`navbar-link ${isActive("/privacy-manager") ? "active" : ""}`}
+          >
+            Privacy
+          </Link>
+
+          <Link 
+            to="/analytics" 
+            className={`navbar-link ${isActive("/analytics") || isActive("/analytics/home") || isActive("/bulk-categorize") || isActive("/analytics-filter") ? "active" : ""}`}
+          >
+            Analytics
+          </Link>
+
+          <Link 
             to="/create-event" 
             className={`navbar-link create-event-link ${isActive("/create-event") ? "active" : ""}`}
           >

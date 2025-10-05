@@ -65,7 +65,27 @@ const postSchema = new mongoose.Schema({
       type: Date,
       default: Date.now
     }
-  }]
+  }],
+  // Privacy settings
+  visibility: {
+    type: String,
+    enum: ['public', 'private', 'friends', 'group'],
+    default: 'public'
+  },
+  settings: {
+    allowDownload: {
+      type: Boolean,
+      default: true
+    },
+    allowSharing: {
+      type: Boolean,
+      default: true
+    },
+    allowComments: {
+      type: Boolean,
+      default: true
+    }
+  }
 }, {
   timestamps: true
 });

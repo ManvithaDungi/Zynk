@@ -1,7 +1,5 @@
-"use client"
-
 import { useState, useEffect, useCallback } from "react"
-import axios from "axios"
+import { albumsAPI } from "../../utils/api"
 import "./AlbumManager.css"
 
 const AlbumManager = ({ eventId, isRegistered, onAlbumSelect }) => {
@@ -19,8 +17,8 @@ const AlbumManager = ({ eventId, isRegistered, onAlbumSelect }) => {
   const fetchAlbums = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`/api/albums/event/${eventId}`)
-      setAlbums(response.data.albums)
+      const response = await albumsAPI.getByEvent(eventId)
+      setAlbums(response.data.albums || [])
     } catch (error) {
       console.error("Error fetching albums:", error)
       setError("Failed to load albums")
@@ -45,7 +43,7 @@ const AlbumManager = ({ eventId, isRegistered, onAlbumSelect }) => {
 
     try {
       setCreating(true)
-      const response = await axios.post("/api/albums", {
+      const response = await albumsAPI.create({
         ...newAlbum,
         eventId,
       })
@@ -68,7 +66,7 @@ const AlbumManager = ({ eventId, isRegistered, onAlbumSelect }) => {
     }
 
     try {
-      await axios.delete(`/api/albums/${albumId}`)
+      await albumsAPI.delete(albumId)
       setAlbums((prev) => prev.filter((album) => album.id !== albumId))
       alert("Album deleted successfully!")
     } catch (error) {

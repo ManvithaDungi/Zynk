@@ -98,11 +98,12 @@ const Login = () => {
         result = await register(formData.name, formData.email, formData.password);
       }
 
-      if (result.success) {
+      if (result?.success) {
         navigate("/home");
       }
     } catch (error) {
       console.error("Auth error:", error);
+      // Error is handled by AuthContext and displayed via authError
     } finally {
       setIsSubmitting(false);
     }
@@ -120,6 +121,12 @@ const Login = () => {
     clearError();
   }, [isLogin, clearError]);
 
+  const handleTabClick = useCallback((mode) => {
+    if (mode !== isLogin) {
+      toggleMode();
+    }
+  }, [isLogin, toggleMode]);
+
   return (
     <div className="login-container">
       <div className="login-wrapper">
@@ -135,14 +142,16 @@ const Login = () => {
             <button
               type="button"
               className={`login-tab ${isLogin ? "active" : ""}`}
-              onClick={() => setIsLogin(true)}
+              onClick={() => handleTabClick(true)}
+              disabled={isSubmitting}
             >
               Sign In
             </button>
             <button
               type="button"
               className={`login-tab ${!isLogin ? "active" : ""}`}
-              onClick={() => setIsLogin(false)}
+              onClick={() => handleTabClick(false)}
+              disabled={isSubmitting}
             >
               Sign Up
             </button>
@@ -169,7 +178,9 @@ const Login = () => {
                   className={`form-input ${errors.name ? "error" : ""}`}
                   placeholder="Enter your full name"
                   required={!isLogin}
+                  disabled={isSubmitting}
                   aria-describedby={errors.name ? "name-error" : undefined}
+                  aria-invalid={!!errors.name}
                 />
                 {errors.name && (
                   <div id="name-error" className="form-error" role="alert">
@@ -192,7 +203,10 @@ const Login = () => {
                 className={`form-input ${errors.email ? "error" : ""}`}
                 placeholder="Enter your email"
                 required
+                disabled={isSubmitting}
                 aria-describedby={errors.email ? "email-error" : undefined}
+                aria-invalid={!!errors.email}
+                autoComplete="email"
               />
               {errors.email && (
                 <div id="email-error" className="form-error" role="alert">
@@ -215,13 +229,18 @@ const Login = () => {
                   className={`form-input ${errors.password ? "error" : ""}`}
                   placeholder="Enter your password"
                   required
+                  disabled={isSubmitting}
                   aria-describedby={errors.password ? "password-error" : undefined}
+                  aria-invalid={!!errors.password}
+                  autoComplete={isLogin ? "current-password" : "new-password"}
                 />
                 <button
                   type="button"
                   className="password-toggle"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={isSubmitting}
                   aria-label={showPassword ? "Hide password" : "Show password"}
+                  tabIndex={0}
                 >
                   {showPassword ? "👁️" : "👁️‍🗨️"}
                 </button>
@@ -247,7 +266,10 @@ const Login = () => {
                   className={`form-input ${errors.confirmPassword ? "error" : ""}`}
                   placeholder="Confirm your password"
                   required={!isLogin}
+                  disabled={isSubmitting}
                   aria-describedby={errors.confirmPassword ? "confirm-password-error" : undefined}
+                  aria-invalid={!!errors.confirmPassword}
+                  autoComplete="new-password"
                 />
                 {errors.confirmPassword && (
                   <div id="confirm-password-error" className="form-error" role="alert">
@@ -282,6 +304,7 @@ const Login = () => {
                 type="button"
                 className="login-toggle-link"
                 onClick={toggleMode}
+                disabled={isSubmitting}
               >
                 {isLogin ? "Sign up here" : "Sign in here"}
               </button>

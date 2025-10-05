@@ -160,6 +160,11 @@ const Home = () => {
                 <h4>Discover Events</h4>
                 <p>Find exciting events happening near you</p>
               </Link>
+              <Link to="/analytics" className="action-card">
+                <div className="action-icon">📊</div>
+                <h4>Post-Event Analytics</h4>
+                <p>Manage memories, analytics, and privacy settings</p>
+              </Link>
             </div>
           </div>
         </div>

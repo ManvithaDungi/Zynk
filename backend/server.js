@@ -22,6 +22,7 @@ const tagRoutes = require("./routes/tagRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const pollRoutes = require("./routes/pollRoutes");
 const chatRoutes = require("./routes/chatRoutes");
+const privacyManagerRoutes = require("./routes/privacyManagerRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -40,7 +41,7 @@ app.set('trust proxy', 1);
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "*",
+  origin: process.env.FRONTEND_URL || "http://localhost:3000",
   credentials: true,
 }));
 app.use(cookieParser());
@@ -164,6 +165,7 @@ app.use("/api/tags", tagRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/polls", pollRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/privacyManager", privacyManagerRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

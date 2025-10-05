@@ -22,7 +22,7 @@ export const SocketProvider = ({ children }) => {
       // Initialize socket connection
       const newSocket = io(process.env.REACT_APP_API_URL || 'http://localhost:5000', {
         auth: {
-          token: localStorage.getItem('token')
+          token: localStorage.getItem('token') || document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1]
         }
       });
 
@@ -53,6 +53,7 @@ export const SocketProvider = ({ children }) => {
         setIsConnected(false);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const joinEventRoom = (eventId) => {

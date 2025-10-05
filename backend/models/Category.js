@@ -28,8 +28,8 @@ const categorySchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for better performance
-categorySchema.index({ name: 1 });
+// Note: Name index is automatically created by unique: true constraint
+// Additional index for better performance
 categorySchema.index({ isActive: 1 });
 
 module.exports = mongoose.model('Category', categorySchema);

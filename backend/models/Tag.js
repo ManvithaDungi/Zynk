@@ -21,8 +21,8 @@ const tagSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for better performance
-tagSchema.index({ name: 1 });
+// Note: Name index is automatically created by unique: true constraint
+// Additional indexes for better performance
 tagSchema.index({ usageCount: -1 });
 tagSchema.index({ isActive: 1 });
 

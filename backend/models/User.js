@@ -68,8 +68,8 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Indexes for better performance
-userSchema.index({ email: 1 });
+// Note: Email index is automatically created by unique: true constraint
+// Additional indexes for better performance
 userSchema.index({ name: 1 });
 
 // Hash password before saving

@@ -1,7 +1,5 @@
-"use client"
-
 import { useState } from "react"
-import axios from "axios"
+import { postsAPI } from "../../utils/api"
 import "./MemoryViewer.css"
 
 const MemoryViewer = ({ album, onBack, isRegistered }) => {
@@ -26,7 +24,7 @@ const MemoryViewer = ({ album, onBack, isRegistered }) => {
 
     try {
       setAdding(true)
-      const response = await axios.post("/api/memories", {
+      const response = await postsAPI.create({
         ...newMemory,
         albumId: album.id,
       })
@@ -45,7 +43,7 @@ const MemoryViewer = ({ album, onBack, isRegistered }) => {
 
   const handleLikeMemory = async (memoryId) => {
     try {
-      const response = await axios.post(`/api/memories/${memoryId}/like`)
+      const response = await postsAPI.like(memoryId)
 
       setMemories((prev) =>
         prev.map((memory) =>
@@ -68,9 +66,7 @@ const MemoryViewer = ({ album, onBack, isRegistered }) => {
     if (!commentText.trim()) return
 
     try {
-      const response = await axios.post(`/api/memories/${memoryId}/comment`, {
-        text: commentText,
-      })
+      const response = await postsAPI.addComment(memoryId, commentText)
 
       setMemories((prev) =>
         prev.map((memory) =>
@@ -95,7 +91,7 @@ const MemoryViewer = ({ album, onBack, isRegistered }) => {
     }
 
     try {
-      await axios.delete(`/api/memories/${memoryId}`)
+      await postsAPI.delete(memoryId)
       setMemories((prev) => prev.filter((memory) => memory.id !== memoryId))
       alert("Memory deleted successfully!")
     } catch (error) {
