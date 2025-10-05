@@ -23,6 +23,8 @@ const reviewRoutes = require("./routes/reviewRoutes");
 const pollRoutes = require("./routes/pollRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const privacyManagerRoutes = require("./routes/privacyManagerRoutes");
+const feedbackRoutes = require("./routes/feedbackRoutes");
+const adminSettingsRoutes = require("./routes/adminSettingsRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -166,6 +168,8 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/polls", pollRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/privacyManager", privacyManagerRoutes);
+app.use("/api/feedback", feedbackRoutes);
+app.use("/api/admin/settings", adminSettingsRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {
