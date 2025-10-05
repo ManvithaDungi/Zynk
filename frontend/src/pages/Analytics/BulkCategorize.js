@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react"
 import { Link } from "react-router-dom"
+import Navbar from "../../components/Navbar/Navbar"
 import "./BulkCategorize.css"
 
 const BulkCategorize = () => {
@@ -13,15 +14,6 @@ const BulkCategorize = () => {
   const [newTag, setNewTag] = useState("")
   const [loading, setLoading] = useState(false)
   const [fetchingMemories, setFetchingMemories] = useState(true)
-  const [newMemory, setNewMemory] = useState({
-    title: "",
-    description: "",
-    author: "",
-    imageUrl: "",
-    category: "",
-    tags: [],
-  })
-  const [newMemoryTagInput, setNewMemoryTagInput] = useState("")
 
   const fetchMemories = useCallback(async () => {
     try {
@@ -86,53 +78,6 @@ const BulkCategorize = () => {
     )
   }, [])
 
-  const handleNewMemoryInputChange = useCallback((e) => {
-    const { name, value } = e.target
-    setNewMemory(prev => ({ ...prev, [name]: value }))
-  }, [])
-
-  const handleAddNewMemoryTag = useCallback(() => {
-    const tag = newMemoryTagInput.trim()
-    if (tag && !newMemory.tags.includes(tag)) {
-      setNewMemory(prev => ({ ...prev, tags: [...prev.tags, tag] }))
-      setNewMemoryTagInput("")
-    }
-  }, [newMemory.tags, newMemoryTagInput])
-
-  const handleRemoveNewMemoryTag = useCallback((tag) => {
-    setNewMemory(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tag) }))
-  }, [])
-
-  const handleCreateMemory = useCallback(async () => {
-    if (!newMemory.title || !newMemory.description || !newMemory.author) {
-      alert("Title, description, and author are required")
-      return
-    }
-    try {
-      setLoading(true)
-      // For now, just add to local state
-      const newMemoryWithId = {
-        ...newMemory,
-        _id: Date.now().toString(),
-        createdAt: new Date().toISOString()
-      }
-      setMemories(prev => [newMemoryWithId, ...prev])
-      setNewMemory({
-        title: "",
-        description: "",
-        author: "",
-        imageUrl: "",
-        category: "",
-        tags: [],
-      })
-      alert("Memory created successfully")
-    } catch (error) {
-      console.error("Error creating memory:", error)
-      alert("Error creating memory")
-    } finally {
-      setLoading(false)
-    }
-  }, [newMemory])
 
   const handleDeleteMemory = useCallback(async (memoryId, e) => {
     e.stopPropagation()
@@ -198,9 +143,10 @@ const BulkCategorize = () => {
 
   return (
     <div className="bulk-categorize">
+      <Navbar />
       <div className="container">
         <header className="page-header">
-          <Link to="/analytics/home" className="back-link">
+          <Link to="/analytics" className="back-link">
             ← Back to Analytics
           </Link>
           <h1>Bulk Categorize & Tag Memories</h1>
@@ -230,7 +176,7 @@ const BulkCategorize = () => {
             ) : memories.length === 0 ? (
               <div className="empty-state">
                 <h3>No Memories Found</h3>
-                <p>Create your first memory to get started</p>
+                <p>Create memories in the <Link to="/albums" style={{ color: '#000', textDecoration: 'underline' }}>Albums page</Link> to get started</p>
               </div>
             ) : (
               <div className="memories-grid">
@@ -312,102 +258,6 @@ const BulkCategorize = () => {
             </button>
           </div>
 
-          {/* Add New Memory */}
-          <div className="add-memory-section">
-            <h2>Add New Memory</h2>
-            <form onSubmit={(e) => { e.preventDefault(); handleCreateMemory(); }}>
-              <div className="form-group">
-                <label>Title</label>
-                <input
-                  type="text"
-                  name="title"
-                  value={newMemory.title}
-                  onChange={handleNewMemoryInputChange}
-                  className="form-input"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Description</label>
-                <textarea
-                  name="description"
-                  value={newMemory.description}
-                  onChange={handleNewMemoryInputChange}
-                  className="form-textarea"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Author</label>
-                <input
-                  type="text"
-                  name="author"
-                  value={newMemory.author}
-                  onChange={handleNewMemoryInputChange}
-                  className="form-input"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Image URL</label>
-                <input
-                  type="url"
-                  name="imageUrl"
-                  value={newMemory.imageUrl}
-                  onChange={handleNewMemoryInputChange}
-                  className="form-input"
-                />
-              </div>
-              <div className="form-group">
-                <label>Category</label>
-                <select
-                  name="category"
-                  value={newMemory.category}
-                  onChange={handleNewMemoryInputChange}
-                  className="form-select"
-                >
-                  <option value="">Select Category</option>
-                  {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Tags</label>
-                <div className="tag-input-group">
-                  <input
-                    type="text"
-                    value={newMemoryTagInput}
-                    onChange={(e) => setNewMemoryTagInput(e.target.value)}
-                    className="form-input"
-                    placeholder="Add tag"
-                  />
-                  <button type="button" onClick={handleAddNewMemoryTag} className="btn btn-secondary">
-                    Add
-                  </button>
-                </div>
-                <div className="memory-tags">
-                  {newMemory.tags.map((tag, index) => (
-                    <span key={index} className="tag">
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveNewMemoryTag(tag)}
-                        className="tag-remove"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <button type="submit" disabled={loading} className="btn btn-primary">
-                {loading ? 'Creating...' : 'Create Memory'}
-              </button>
-            </form>
-          </div>
         </div>
       </div>
     </div>

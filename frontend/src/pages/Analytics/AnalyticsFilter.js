@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import Navbar from "../../components/Navbar/Navbar";
 import {
   BarChart,
   Bar,
@@ -96,10 +97,11 @@ const AnalyticsFilter = () => {
 
   return (
     <div className="analytics-filter">
+      <Navbar />
       <div className="container">
         <header className="page-header">
-          <Link to="/home-page" className="back-btn">
-            ← Back to Dashboard
+          <Link to="/analytics" className="back-btn">
+            ← Back to Analytics
           </Link>
           <div className="header-content">
             <div className="header-icon">📊</div>

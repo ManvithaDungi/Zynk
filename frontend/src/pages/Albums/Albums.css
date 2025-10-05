@@ -10,18 +10,33 @@
 }
  
 .albums-header {
-   display: flex;
-   justify-content: space-between;
-   align-items: center;
-   margin-bottom: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 40px;
+  padding-bottom: 30px;
+  border-bottom: 2px solid #e0e0e0;
 }
 
 .albums-header h1 {
-   font-size: 48px;
-   font-weight: 700;
-   color: #000000;
-   margin: 0;
-   letter-spacing: -0.02em;
+  font-size: 48px;
+  font-weight: 700;
+  color: #000000;
+  margin: 0 0 12px 0;
+  letter-spacing: -0.02em;
+}
+
+.albums-header p {
+  font-size: 16px;
+  color: #666666;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
 }
  
 .albums-content {

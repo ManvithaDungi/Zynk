@@ -48,7 +48,7 @@ const Navbar = () => {
 
           <Link 
             to="/analytics" 
-            className={`navbar-link ${isActive("/analytics") || isActive("/analytics/home") || isActive("/bulk-categorize") || isActive("/analytics-filter") ? "active" : ""}`}
+            className={`navbar-link ${location.pathname.startsWith("/analytics") || location.pathname === "/bulk-categorize" || location.pathname === "/analytics-filter" ? "active" : ""}`}
           >
             Analytics
           </Link>

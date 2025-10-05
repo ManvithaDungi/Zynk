@@ -10,7 +10,7 @@ const socketIo = require("socket.io");
 const jwt = require("jsonwebtoken");
 
 // Import routes
-const authRoutes = require("./routes/authRoutes");
+const authRoutes = require("./routes/auth");
 const eventRoutes = require("./routes/eventRoutes");
 const userRoutes = require("./routes/userRoutes");
 const albumRoutes = require("./routes/albumRoutes");

@@ -1,0 +1,5 @@
+./events/event1 : its the poster of an music event, with tile of guess the airtist
+./events/event2 : post of an event with desc (balance ur uni life at study social)
+ ./events/event3 : friendship bracelet making crafternoon
+ ./events/event4 : AP club interest meeting boost ur exam scores
+ ./events/event5 : poster for a board games event

@@ -8,6 +8,7 @@ import "./App.css";
 const Login = lazy(() => import("./pages/Login/Login"));
 const TestAuth = lazy(() => import("./pages/TestAuth"));
 const TestConnection = lazy(() => import("./pages/TestConnection"));
+const DebugAuth = lazy(() => import("./pages/DebugAuth"));
 const Home = lazy(() => import("./pages/Home/Home"));
 const UpcomingEvents = lazy(() => import("./pages/UpcomingEvents/UpcomingEvents"));
 const CreateEvent = lazy(() => import("./pages/CreateEvent/CreateEvent"));
@@ -17,7 +18,6 @@ const Albums = lazy(() => import("./pages/Albums/Albums"));
 const PrivacyManager = lazy(() => import("./pages/PrivacyManager/PrivacyManager"));
 
 // Analytics module components
-const AnalyticsLanding = lazy(() => import("./pages/Analytics/Landing"));
 const AnalyticsHome = lazy(() => import("./pages/Analytics/Home"));
 const BulkCategorize = lazy(() => import("./pages/Analytics/BulkCategorize"));
 const AnalyticsFilter = lazy(() => import("./pages/Analytics/AnalyticsFilter"));
@@ -63,6 +63,7 @@ function AppRoutes() {
         <Route path="/login" element={user ? <Navigate to="/home" replace /> : <Login />} />
         <Route path="/test-auth" element={<TestAuth />} />
         <Route path="/test-connection" element={<TestConnection />} />
+        <Route path="/debug-auth" element={<DebugAuth />} />
         <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
         <Route path="/upcoming-events" element={<PrivateRoute><UpcomingEvents /></PrivateRoute>} />
         <Route path="/create-event" element={<PrivateRoute><CreateEvent /></PrivateRoute>} />
@@ -71,11 +72,10 @@ function AppRoutes() {
         <Route path="/albums" element={<PrivateRoute><Albums /></PrivateRoute>} />
         <Route path="/privacy-manager" element={<PrivateRoute><PrivacyManager /></PrivateRoute>} />
 
-        {/* Analytics module routes */}
-        <Route path="/analytics" element={<PrivateRoute><AnalyticsLanding /></PrivateRoute>} />
-        <Route path="/analytics/home" element={<PrivateRoute><AnalyticsHome /></PrivateRoute>} />
-        <Route path="/bulk-categorize" element={<PrivateRoute><BulkCategorize /></PrivateRoute>} />
-        <Route path="/analytics-filter" element={<PrivateRoute><AnalyticsFilter /></PrivateRoute>} />
+            {/* Analytics module routes */}
+            <Route path="/analytics" element={<PrivateRoute><AnalyticsHome /></PrivateRoute>} />
+            <Route path="/bulk-categorize" element={<PrivateRoute><BulkCategorize /></PrivateRoute>} />
+            <Route path="/analytics-filter" element={<PrivateRoute><AnalyticsFilter /></PrivateRoute>} />
 
         <Route path="/" element={<Navigate to={user ? "/home" : "/login"} replace />} />
         {/* Catch-all route for 404 - redirects to home or login */}

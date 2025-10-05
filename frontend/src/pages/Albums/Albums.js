@@ -252,13 +252,24 @@ const Albums = () => {
       
       <div className="albums-container">
         <div className="albums-header">
-          <h1>My Albums</h1>
-          <button 
-            onClick={() => setShowCreateAlbum(true)}
-            className="btn btn-primary"
-          >
-            Create Album
-          </button>
+          <div>
+            <h1>My Albums & Memories</h1>
+            <p>Organize your event memories into albums or create standalone memories</p>
+          </div>
+          <div className="header-actions">
+            <button 
+              onClick={() => setShowCreateAlbum(true)}
+              className="btn btn-secondary"
+            >
+              + New Album
+            </button>
+            <button 
+              onClick={() => setShowCreatePost(true)}
+              className="btn btn-primary"
+            >
+              + Create Memory
+            </button>
+          </div>
         </div>
 
         <div className="albums-content">
@@ -285,7 +296,7 @@ const Albums = () => {
                     onClick={() => setShowCreatePost(true)}
                     className="btn btn-primary"
                   >
-                    Create Post
+                    + Add Memory
                   </button>
                 </div>
 
@@ -293,8 +304,8 @@ const Albums = () => {
               </>
             ) : (
               <div className="empty-state">
-                <h3>Select an album to view posts</h3>
-                <p>Choose an album from the sidebar or create a new one</p>
+                <h3>Select an album to view memories</h3>
+                <p>Choose an album from the sidebar to see its memories, or click "Create Memory" above to add a standalone memory</p>
               </div>
             )}
           </div>
@@ -342,14 +353,14 @@ const Albums = () => {
           </div>
         )}
 
-        {/* Create Post Modal */}
+        {/* Create Memory Modal */}
         {showCreatePost && (
           <div className="modal-overlay" onClick={() => {
             setShowCreatePost(false);
             stopCapture();
           }}>
             <div className="modal large-modal" onClick={(e) => e.stopPropagation()}>
-              <h2>Create New Post</h2>
+              <h2>Create New Memory</h2>
               <form onSubmit={createPost}>
                 <div className="form-group">
                   <label>Caption</label>
@@ -436,7 +447,7 @@ const Albums = () => {
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-primary">
-                    Create Post
+                    Create Memory
                   </button>
                 </div>
               </form>

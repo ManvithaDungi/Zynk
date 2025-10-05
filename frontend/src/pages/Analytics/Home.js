@@ -1,14 +1,14 @@
-import { Link } from "react-router-dom"
-import "./Home.css"
+import { Link } from "react-router-dom";
+import Navbar from "../../components/Navbar/Navbar";
+import "./Home.css";
 
-const Home = () => {
+const AnalyticsHome = () => {
   const modules = [
     {
       id: "bulk-categorize",
       title: "Bulk Categorize & Tag",
       description: "Organize memories by assigning categories and tags in bulk",
       icon: "🏷️",
-      color: "#2563eb", // Blue theme
       path: "/bulk-categorize",
     },
     {
@@ -16,7 +16,6 @@ const Home = () => {
       title: "Privacy & Visibility",
       description: "Control who can see specific memories and content",
       icon: "🛡️",
-      color: "#1e40af", // Darker blue
       path: "/privacy-manager",
     },
     {
@@ -24,18 +23,18 @@ const Home = () => {
       title: "Analytics Dashboard",
       description: "View detailed insights and trends from your event data",
       icon: "📊",
-      color: "#3b82f6", // Medium blue
       path: "/analytics-filter",
     },
-  ]
+  ];
 
   return (
-    <div className="homepage">
-      <div className="container">
-        <header className="homepage-header">
-          <h1>Post-Event Memories & Analytics</h1>
-          <p>Manage, analyze, and export your event memories with powerful tools</p>
-          <div className="event-badge">Event ID: event-123</div>
+    <div className="analytics-page">
+      <Navbar />
+      
+      <div className="analytics-container">
+        <header className="analytics-header">
+          <h1>Post-Event Analytics</h1>
+          <p>Manage, analyze, and organize your event memories with powerful tools</p>
         </header>
 
         <div className="stats-grid">
@@ -49,15 +48,22 @@ const Home = () => {
           <div className="stat-card">
             <div className="stat-icon">👥</div>
             <div className="stat-content">
-              <h3>89</h3>
+              <h3>342</h3>
               <p>Contributors</p>
             </div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon">📈</div>
+            <div className="stat-icon">🏷️</div>
             <div className="stat-content">
-              <h3>94%</h3>
-              <p>Engagement Rate</p>
+              <h3>28</h3>
+              <p>Categories</p>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon">⭐</div>
+            <div className="stat-content">
+              <h3>156</h3>
+              <p>Tags Used</p>
             </div>
           </div>
         </div>
@@ -65,22 +71,18 @@ const Home = () => {
         <div className="modules-grid">
           {modules.map((module) => (
             <Link key={module.id} to={module.path} className="module-card">
-              <div className="module-icon" style={{ backgroundColor: module.color }}>
-                {module.icon}
+              <div className="module-icon">{module.icon}</div>
+              <div className="module-content">
+                <h3>{module.title}</h3>
+                <p>{module.description}</p>
               </div>
-              <h3>{module.title}</h3>
-              <p>{module.description}</p>
               <div className="module-arrow">→</div>
             </Link>
           ))}
         </div>
-
-        <footer className="homepage-footer">
-          <p>Social Timeline App - Post-Event Management System</p>
-        </footer>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Home
+export default AnalyticsHome;

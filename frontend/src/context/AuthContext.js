@@ -1,12 +1,12 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { authAPI } from "../utils/api";
+import { createContext, useContext, useState, useEffect } from 'react';
+import { authAPI } from '../utils/api';
 
 const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
@@ -14,41 +14,43 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
-  // Check authentication status on app start
-  const checkAuth = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await authAPI.getMe();
-      setUser(response.data.user);
-      setError("");
-    } catch (error) {
-      // User not authenticated or token expired
-      setUser(null);
-      localStorage.removeItem('token');
-    } finally {
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      checkAuth();
+    } else {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+  const checkAuth = async () => {
+    try {
+      const response = await authAPI.getMe();
+      setUser(response.data.user);
+    } catch (error) {
+      localStorage.removeItem('token');
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const login = async (email, password) => {
     try {
-      setError("");
+      setError('');
       setLoading(true);
 
       const response = await authAPI.login(email, password);
-      const { user } = response.data;
-      
+      const { token, user } = response.data;
+
+      localStorage.setItem('token', token);
       setUser(user);
-      setError("");
+
       return { success: true };
     } catch (error) {
-      const message = error.response?.data?.message || "Login failed";
+      const message = error.response?.data?.message || 'Login failed';
       setError(message);
       return { success: false, error: message };
     } finally {
@@ -58,21 +60,18 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (username, email, password) => {
     try {
-      setError("");
+      setError('');
       setLoading(true);
 
-      // Register user
-      await authAPI.register(username, email, password);
-      
-      // Auto-login after successful registration
-      const loginResponse = await authAPI.login(email, password);
-      const { user } = loginResponse.data;
-      
+      const response = await authAPI.register(username, email, password);
+      const { token, user } = response.data;
+
+      localStorage.setItem('token', token);
       setUser(user);
-      setError("");
+
       return { success: true };
     } catch (error) {
-      const message = error.response?.data?.message || "Registration failed";
+      const message = error.response?.data?.message || 'Registration failed';
       setError(message);
       return { success: false, error: message };
     } finally {
@@ -80,19 +79,13 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = async () => {
-    try {
-      await authAPI.logout();
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      setUser(null);
-      setError("");
-      localStorage.removeItem('token');
-    }
+  const logout = () => {
+    localStorage.removeItem('token');
+    setUser(null);
+    setError('');
   };
 
-  const clearError = () => setError("");
+  const clearError = () => setError('');
 
   const value = {
     user,
