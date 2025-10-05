@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "../../context/AuthContext";
 import Navbar from "../../components/Navbar/Navbar";
+import EnhancedMemoryForm from "../../components/EnhancedMemoryForm/EnhancedMemoryForm";
 import { albumsAPI, postsAPI } from "../../utils/api";
 import "./Albums.css";
 
@@ -353,104 +354,27 @@ const Albums = () => {
           </div>
         )}
 
-        {/* Create Memory Modal */}
+        {/* Enhanced Memory Creation Modal */}
         {showCreatePost && (
           <div className="modal-overlay" onClick={() => {
             setShowCreatePost(false);
             stopCapture();
           }}>
             <div className="modal large-modal" onClick={(e) => e.stopPropagation()}>
-              <h2>Create New Memory</h2>
-              <form onSubmit={createPost}>
-                <div className="form-group">
-                  <label>Caption</label>
-                  <textarea
-                    value={postCaption}
-                    onChange={(e) => setPostCaption(e.target.value)}
-                    placeholder="Write a caption..."
-                    rows="3"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Media</label>
-                  <div className="media-upload-section">
-                    <div className="upload-buttons">
-                      <label className="btn btn-secondary">
-                        Upload Files
-                        <input
-                          type="file"
-                          multiple
-                          accept="image/*,video/*"
-                          onChange={handleFileSelect}
-                          style={{ display: "none" }}
-                        />
-                      </label>
-                      {!captureMode ? (
-                        <button type="button" onClick={startCapture} className="btn btn-secondary">
-                          Use Camera
-                        </button>
-                      ) : (
-                        <button type="button" onClick={stopCapture} className="btn btn-secondary">
-                          Stop Camera
-                        </button>
-                      )}
-                    </div>
-
-                    {captureMode && stream && (
-                      <div className="camera-section">
-                        <video
-                          id="camera-preview"
-                          autoPlay
-                          playsInline
-                          ref={(video) => {
-                            if (video && stream) {
-                              video.srcObject = stream;
-                            }
-                          }}
-                          className="camera-preview"
-                        />
-                        <button type="button" onClick={capturePhoto} className="btn btn-primary capture-btn">
-                          Capture Photo
-                        </button>
-                      </div>
-                    )}
-
-                    {mediaPreviews.length > 0 && (
-                      <div className="media-previews">
-                        {mediaPreviews.map((preview, index) => (
-                          <div key={index} className="media-preview-item">
-                            <img src={preview} alt={`Preview ${index + 1}`} />
-                            <button
-                              type="button"
-                              onClick={() => removeMedia(index)}
-                              className="remove-media-btn"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="modal-actions">
-                  <button 
-                    type="button" 
-                    onClick={() => {
-                      setShowCreatePost(false);
-                      stopCapture();
-                    }} 
-                    className="btn btn-secondary"
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    Create Memory
-                  </button>
-                </div>
-              </form>
+              <EnhancedMemoryForm
+                albumId={selectedAlbum?.id}
+                onClose={() => {
+                  setShowCreatePost(false);
+                  stopCapture();
+                }}
+                onSuccess={(newMemory) => {
+                  // Refresh posts after successful creation
+                  if (selectedAlbum) {
+                    fetchPosts(selectedAlbum.id);
+                  }
+                  setShowCreatePost(false);
+                }}
+              />
             </div>
           </div>
         )}

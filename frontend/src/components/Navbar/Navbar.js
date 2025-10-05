@@ -40,6 +40,13 @@ const Navbar = () => {
           </Link>
 
           <Link 
+            to="/create-memory" 
+            className={`navbar-link ${isActive("/create-memory") ? "active" : ""}`}
+          >
+            Create Memory
+          </Link>
+
+          <Link 
             to="/privacy-manager" 
             className={`navbar-link ${isActive("/privacy-manager") ? "active" : ""}`}
           >
