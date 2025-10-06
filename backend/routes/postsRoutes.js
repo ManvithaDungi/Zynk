@@ -47,7 +47,7 @@ router.get('/', authenticateToken, async (req, res) => {
         commentsCount: post.commentsCount,
         user: post.user,
         album: post.album,
-        isLiked: post.likes.some(like => like.user.toString() === req.user.userId),
+        isLiked: post.likes.some(like => like.user && like.user.toString() === req.user.userId),
         createdAt: post.createdAt
       })),
       pagination: {
@@ -62,24 +62,88 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
+// Get all posts by current user (for memories page)
+router.get('/user', authenticateToken, async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (page - 1) * limit;
+
+    // Get all posts created by the current user
+    const posts = await Post.find({ user: req.user.userId })
+      .populate('user', 'name email avatar')
+      .populate('album', 'name')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Post.countDocuments({ user: req.user.userId });
+
+    res.json({
+      posts: posts.map(post => ({
+        id: post._id,
+        caption: post.caption,
+        media: post.media,
+        likesCount: post.likesCount,
+        commentsCount: post.commentsCount,
+        user: post.user,
+        album: post.album,
+        visibility: post.visibility,
+        isLiked: post.likes.some(like => like.user && like.user.toString() === req.user.userId),
+        createdAt: post.createdAt
+      })),
+      pagination: {
+        current: parseInt(page),
+        pages: Math.ceil(total / limit),
+        total
+      }
+    });
+  } catch (error) {
+    console.error('Get user posts error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 // Create post
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { caption, album, media } = req.body;
+    const { caption, album, albumId, media } = req.body;
 
     // Input validation
-    if (!caption || !album || !media || !Array.isArray(media) || media.length === 0) {
+    if (!caption || !media || !Array.isArray(media) || media.length === 0) {
       return res.status(400).json({
-        message: 'Caption, album, and at least one media item are required'
+        message: 'Caption and at least one media item are required'
       });
     }
 
-    if (!isValidObjectId(album)) {
+    let albumToUse = album || albumId;
+
+    // If no album provided, create or find default "Standalone Memories" album
+    if (!albumToUse) {
+      let defaultAlbum = await Album.findOne({ 
+        name: 'Standalone Memories', 
+        createdBy: req.user.userId 
+      });
+      
+      if (!defaultAlbum) {
+        // Create default album for standalone memories
+        defaultAlbum = new Album({
+          name: 'Standalone Memories',
+          description: 'Default album for standalone memories',
+          createdBy: req.user.userId,
+          isPublic: false
+        });
+        await defaultAlbum.save();
+      }
+      
+      albumToUse = defaultAlbum._id;
+    }
+
+    if (!isValidObjectId(albumToUse)) {
       return res.status(400).json({ message: 'Invalid album ID' });
     }
 
     // Check if album exists and user has access
-    const albumDoc = await Album.findById(album);
+    const albumDoc = await Album.findById(albumToUse);
     if (!albumDoc) {
       return res.status(404).json({ message: 'Album not found' });
     }
@@ -90,7 +154,7 @@ router.post('/', authenticateToken, async (req, res) => {
 
     const postData = {
       caption: sanitizeString(caption),
-      album,
+      album: albumToUse,
       user: req.user.userId,
       media: media.map(item => ({
         url: item.url,
@@ -157,7 +221,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
         user: post.user,
         album: post.album,
         comments: post.comments,
-        isLiked: post.likes.some(like => like.user.toString() === req.user.userId),
+        isLiked: post.likes.some(like => like.user && like.user.toString() === req.user.userId),
         createdAt: post.createdAt
       }
     });
@@ -182,7 +246,7 @@ router.post('/:id/like', authenticateToken, async (req, res) => {
     }
 
     // Check if already liked
-    const alreadyLiked = post.likes.some(like => like.user.toString() === req.user.userId);
+    const alreadyLiked = post.likes.some(like => like.user && like.user.toString() === req.user.userId);
     if (alreadyLiked) {
       return res.status(400).json({ message: 'Post already liked' });
     }
@@ -211,7 +275,7 @@ router.post('/:id/unlike', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    post.likes = post.likes.filter(like => like.user.toString() !== req.user.userId);
+    post.likes = post.likes.filter(like => like.user && like.user.toString() !== req.user.userId);
     await post.save();
 
     res.json({ message: 'Post unliked successfully' });

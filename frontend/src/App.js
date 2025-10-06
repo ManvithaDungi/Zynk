@@ -19,6 +19,7 @@ const PrivacyManager = lazy(() => import("./pages/PrivacyManager/PrivacyManager"
 const UserProfile = lazy(() => import("./pages/UserProfile/UserProfile"));
 const Feedback = lazy(() => import("./pages/Feedback/Feedback"));
 const CreateMemory = lazy(() => import("./pages/CreateMemory/CreateMemory"));
+const Memories = lazy(() => import("./pages/Memories/Memories"));
 
 // Analytics module components
 const AnalyticsHome = lazy(() => import("./pages/Analytics/Home"));
@@ -77,6 +78,7 @@ function AppRoutes() {
         <Route path="/profile" element={<PrivateRoute><UserProfile /></PrivateRoute>} />
         <Route path="/feedback" element={<PrivateRoute><Feedback /></PrivateRoute>} />
         <Route path="/create-memory" element={<PrivateRoute><CreateMemory /></PrivateRoute>} />
+        <Route path="/memories" element={<PrivateRoute><Memories /></PrivateRoute>} />
 
             {/* Analytics module routes */}
             <Route path="/analytics" element={<PrivateRoute><AnalyticsHome /></PrivateRoute>} />

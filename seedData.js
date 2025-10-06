@@ -15,10 +15,10 @@ const sampleMemories = [
     visibility: "public",
     createdAt: new Date("2024-01-15"),
     reportCount: 0,
-    likes: 45,
+    likes: [],
     shares:12,
     views: 120,
-    comments: 8,
+    comments: [],
   },
   {
     title: "Group Photo Session",
@@ -32,10 +32,10 @@ const sampleMemories = [
     visibility: "public",
     createdAt: new Date("2024-01-16"),
     reportCount: 0,
-    likes: 32,
+    likes: [],
     shares:12,
     views: 89,
-    comments: 5,
+    comments: [],
   },
   {
     title: "Candid Moments",
@@ -49,10 +49,10 @@ const sampleMemories = [
     visibility: "restricted",
     createdAt: new Date("2024-01-17"),
     reportCount: 2,
-    likes: 18,
+    likes: [],
     shares:12,
     views: 67,
-    comments: 3,
+    comments: [],
   },
   {
     title: "Venue Architecture",
@@ -66,10 +66,10 @@ const sampleMemories = [
     visibility: "public",
     createdAt: new Date("2024-01-18"),
     reportCount: 0,
-    likes: 28,
+    likes: [],
     shares:12,
     views: 95,
-    comments: 7,
+    comments: [],
   },
   {
     title: "Award Ceremony",
@@ -83,10 +83,10 @@ const sampleMemories = [
     visibility: "public",
     createdAt: new Date("2024-01-19"),
     reportCount: 0,
-    likes: 67,
+    likes: [],
     shares:12,
     views: 156,
-    comments: 12,
+    comments: [],
   },
   {
     title: "Networking Session",
@@ -100,9 +100,9 @@ const sampleMemories = [
     visibility: "public",
     createdAt: new Date("2024-01-20"),
     reportCount: 0,
-    likes: 54,
+    likes: [],
     views: 134,
-    comments: 9,
+    comments: [],
     shares: 15,
   },
   {
@@ -117,9 +117,9 @@ const sampleMemories = [
     visibility: "public",
     createdAt: new Date("2024-01-21"),
     reportCount: 0,
-    likes: 39,
+    likes: [],
     views: 102,
-    comments: 6,
+    comments: [],
     shares: 7,
   },
   {
@@ -134,9 +134,9 @@ const sampleMemories = [
     visibility: "public",
     createdAt: new Date("2024-01-22"),
     reportCount: 0,
-    likes: 41,
+    likes: [],
     views: 118,
-    comments: 8,
+    comments: [],
     shares: 11,
   },
   {
@@ -151,9 +151,9 @@ const sampleMemories = [
     visibility: "private",
     createdAt: new Date("2024-01-23"),
     reportCount: 1,
-    likes: 23,
+    likes: [],
     views: 78,
-    comments: 4,
+    comments: [],
     shares: 3,
   },
   {
@@ -168,9 +168,9 @@ const sampleMemories = [
     visibility: "public",
     createdAt: new Date("2024-01-24"),
     reportCount: 0,
-    likes: 72,
+    likes: [],
     views: 189,
-    comments: 15,
+    comments: [],
     shares: 22,
   },
 ];
@@ -200,80 +200,80 @@ const sampleAnalytics = [
   {
     date: "2024-01-15",
     views: 120,
-    likes: 45,
-    comments: 8,
+    likes: [],
+    comments: [],
     shares: 12,
     category: "Event Highlights",
   },
   {
     date: "2024-01-16",
     views: 89,
-    likes: 32,
-    comments: 5,
+    likes: [],
+    comments: [],
     shares: 8,
     category: "Group Photos",
   },
   {
     date: "2024-01-17",
     views: 67,
-    likes: 18,
-    comments: 3,
+    likes: [],
+    comments: [],
     shares: 2,
     category: "Candid Moments",
   },
   {
     date: "2024-01-18",
     views: 95,
-    likes: 28,
-    comments: 7,
+    likes: [],
+    comments: [],
     shares: 5,
     category: "Venue Shots",
   },
   {
     date: "2024-01-19",
     views: 156,
-    likes: 67,
-    comments: 12,
+    likes: [],
+    comments: [],
     shares: 18,
     category: "Event Highlights",
   },
   {
     date: "2024-01-20",
     views: 134,
-    likes: 54,
-    comments: 9,
+    likes: [],
+    comments: [],
     shares: 15,
     category: "Event Highlights",
   },
   {
     date: "2024-01-21",
     views: 102,
-    likes: 39,
-    comments: 6,
+    likes: [],
+    comments: [],
     shares: 7,
     category: "Group Photos",
   },
   {
     date: "2024-01-22",
     views: 118,
-    likes: 41,
-    comments: 8,
+    likes: [],
+    comments: [],
     shares: 11,
     category: "Candid Moments",
   },
   {
     date: "2024-01-23",
     views: 78,
-    likes: 23,
-    comments: 4,
+    likes: [],
+    comments: [],
     shares: 3,
     category: "Group Photos",
   },
   {
     date: "2024-01-24",
     views: 189,
-    likes: 72,
-    comments: 15,
+    likes: [],
+    comments: [],
     shares: 22,
     category: "Event Highlights",
   },
@@ -287,32 +287,53 @@ async function seedDatabase() {
     );
     console.log("Connected to MongoDB");
 
-    // Clear existing data
-    await mongoose.connection.db
-      .collection("memories")
-      .deleteMany({});
-    await mongoose.connection.db
-      .collection("users")
-      .deleteMany({});
-    await mongoose.connection.db
-      .collection("groups")
-      .deleteMany({});
+    // Check for existing data and only insert if collections are empty
+    const memoriesCollection = mongoose.connection.db.collection("memories");
+    const usersCollection = mongoose.connection.db.collection("users");
+    const groupsCollection = mongoose.connection.db.collection("groups");
 
-    // Insert sample data
-    await mongoose.connection.db
-      .collection("memories")
-      .insertMany(sampleMemories);
-    await mongoose.connection.db
-      .collection("users")
-      .insertMany(sampleUsers);
-    await mongoose.connection.db
-      .collection("groups")
-      .insertMany(sampleGroups);
+    // Check existing counts
+    const existingMemories = await memoriesCollection.countDocuments();
+    const existingUsers = await usersCollection.countDocuments();
+    const existingGroups = await groupsCollection.countDocuments();
 
-    console.log("Sample data inserted successfully!");
-    console.log(`- ${sampleMemories.length} memories`);
-    console.log(`- ${sampleUsers.length} users`);
-    console.log(`- ${sampleGroups.length} groups`);
+    console.log(`📊 Existing data found:`);
+    console.log(`   - Memories: ${existingMemories}`);
+    console.log(`   - Users: ${existingUsers}`);
+    console.log(`   - Groups: ${existingGroups}`);
+
+    // Insert sample data only if collections are empty
+    if (existingMemories === 0) {
+      await memoriesCollection.insertMany(sampleMemories);
+      console.log(`✅ Inserted ${sampleMemories.length} memories`);
+    } else {
+      console.log(`⚠️  Memories already exist (${existingMemories} found). Skipping...`);
+    }
+
+    if (existingUsers === 0) {
+      await usersCollection.insertMany(sampleUsers);
+      console.log(`✅ Inserted ${sampleUsers.length} users`);
+    } else {
+      console.log(`⚠️  Users already exist (${existingUsers} found). Skipping...`);
+    }
+
+    if (existingGroups === 0) {
+      await groupsCollection.insertMany(sampleGroups);
+      console.log(`✅ Inserted ${sampleGroups.length} groups`);
+    } else {
+      console.log(`⚠️  Groups already exist (${existingGroups} found). Skipping...`);
+    }
+
+    // Final summary
+    const finalMemories = await memoriesCollection.countDocuments();
+    const finalUsers = await usersCollection.countDocuments();
+    const finalGroups = await groupsCollection.countDocuments();
+
+    console.log("\n🎉 Seeding completed successfully!");
+    console.log(`📊 Final database state:`);
+    console.log(`   - Total memories: ${finalMemories}`);
+    console.log(`   - Total users: ${finalUsers}`);
+    console.log(`   - Total groups: ${finalGroups}`);
   } catch (error) {
     console.error("Error seeding database:", error);
     process.exit(1);

@@ -313,8 +313,10 @@ const EnhancedMemoryForm = ({ albumId, onClose, onSuccess }) => {
         submitData.append('media', file);
       });
       
-      // Add album ID
-      submitData.append('albumId', albumId);
+      // Add album ID only if provided (for standalone memories, don't send albumId)
+      if (albumId) {
+        submitData.append('albumId', albumId);
+      }
       
       const response = await postsAPI.create(submitData);
       

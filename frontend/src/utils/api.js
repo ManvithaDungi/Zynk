@@ -183,6 +183,9 @@ export const postsAPI = {
   getAll: (params = {}) => 
     api.get('posts', { params }),
   
+  getUserPosts: (params = {}) => 
+    api.get('posts/user', { params }),
+  
   getById: (id) => 
     api.get(`posts/${id}`),
   
