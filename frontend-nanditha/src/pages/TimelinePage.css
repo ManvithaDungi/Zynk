@@ -1,0 +1,251 @@
+/* === TimelinePage.css (Refined Reference Layout + Pink-Orange Theme) === */
+
+/* GLOBAL RESET */
+body,
+html,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: "Poppins", sans-serif;
+  background: #ffeef7; /* soft light pink background */
+  overflow-x: hidden;
+  color: #2b2540;
+}
+
+/* LAYOUT */
+:root {
+  --sidebar-width: 270px;
+  --accent: #f78da7; /* pink-orange */
+}
+
+.app-root {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.main-content {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  padding: 2rem;
+  box-sizing: border-box;
+  min-height: 100vh;
+  overflow-y: auto;
+  background: transparent;
+}
+
+/* === SIDEBAR === */
+.sidebar {
+  width: var(--sidebar-width);
+  background: #fffafc;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.05);
+  padding: 2rem 1.2rem;
+  position: fixed;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.sidebar-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sidebar h1 {
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: #2b2540;
+  margin-bottom: 0.5rem;
+}
+
+/* Big Date */
+.sidebar-date {
+  text-align: center;
+  margin: 1rem 0 2rem 0;
+}
+
+.sidebar-date .big-date {
+  font-size: 6rem;
+  font-weight: 800;
+  line-height: 1;
+  background: var(--accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -2px;
+}
+
+.sidebar-date .month-year {
+  font-size: 1.1rem;
+  color: #2b2540;
+  margin-top: 0.4rem;
+  font-weight: 500;
+}
+
+/* Sidebar Nav */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 2rem;
+  width: 100%;
+}
+
+.sidebar-nav a {
+  text-decoration: none;
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  font-weight: 600;
+  color: #333;
+  transition: 0.25s;
+}
+
+.sidebar-nav a:hover,
+.sidebar-nav a.active {
+  background: linear-gradient(90deg, #f78da7, #f9a8d4);
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(247, 141, 167, 0.3);
+}
+
+/* === CALENDAR === */
+.calendar-layout {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  gap: 2rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.calendar-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.calendar-card {
+  width: 100%;
+  max-width: 1300px;
+  background: transparent; /* removes white box */
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* React Big Calendar */
+.rbc-calendar {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* Toolbar */
+.rbc-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 0 1rem;
+}
+
+.rbc-toolbar button {
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.rbc-toolbar button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* Month grid styling */
+.rbc-month-view {
+  border: none;
+  background: transparent;
+  padding: 0 0.5rem;
+}
+
+.rbc-row-content {
+  gap: 10px;
+}
+
+.rbc-date-cell {
+  text-align: right;
+  padding: 0.6rem 0.8rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  color: #f78da7;
+}
+
+.rbc-month-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.rbc-day-bg {
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #f1f1f1;
+  transition: 0.25s ease;
+}
+
+.rbc-day-bg:hover {
+  background: #ffe5ef;
+}
+
+.rbc-today {
+  background: rgba(247, 141, 167, 0.1) !important;
+  border: 1.5px solid var(--accent);
+}
+
+/* Event style */
+.rbc-event {
+  background: var(--accent);
+  border: none;
+  color: white;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Upcoming Box */
+.upcoming-box {
+  margin-top: 2rem;
+  background: rgba(255, 255, 255, 0.97);
+  padding: 1.5rem 2rem;
+  border-radius: 14px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06);
+  width: 100%;
+  max-width: 1300px;
+}
+
+.upcoming-box h3 {
+  font-size: 1.3rem;
+  color: #2b2540;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(#f78da7, #f9a8d4);
+  border-radius: 10px;
+}

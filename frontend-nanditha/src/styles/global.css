@@ -1,0 +1,23 @@
+/* src/styles/global.css */
+:root {
+  --sidebar-width: 220px;
+}
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+
+/* background gradient full-screen */
+body {
+  background: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* layout */
+.app-root {
+  display: flex;
+  min-height: 100vh;
+}
+.main-content {
+  margin-left: var(--sidebar-width);
+  padding: 2.2rem;
+  width: calc(100% - var(--sidebar-width));
+}
