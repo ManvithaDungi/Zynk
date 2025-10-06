@@ -1,7 +1,7 @@
 /* Home Page Container */
 .home-page {
   min-height: 100vh;
-  background-color: #ffffff;
+  background-color: #000000;
 }
 
 /* Home Container */
@@ -26,14 +26,14 @@
   transform: translateX(-50%);
   width: 80px;
   height: 4px;
-  background: linear-gradient(90deg, #000000 0%, #666666 50%, #000000 100%);
+  background: linear-gradient(90deg, #ffffff 0%, #cccccc 50%, #ffffff 100%);
   border-radius: 2px;
 }
 
 .home-header h1 {
   font-size: 56px;
   font-weight: 800;
-  color: #000000;
+  color: #ffffff;
   margin: 20px 0 20px 0;
   letter-spacing: -0.03em;
   line-height: 1.1;
@@ -41,7 +41,7 @@
 
 .home-header p {
   font-size: 20px;
-  color: #666666;
+  color: #999999;
   margin: 0;
   line-height: 1.7;
   font-weight: 500;

@@ -1,8 +1,8 @@
 /* Event Detail Page */
 .event-detail-page {
   min-height: 100vh;
-  background-color: #ffffff;
-  color: #000000;
+  background-color: #000000;
+  color: #ffffff;
 }
 
 /* Container */
@@ -20,8 +20,8 @@
 /* Back Button */
 .back-btn {
   background: none;
-  border: 2px solid #e0e0e0;
-  color: #000000;
+  border: 2px solid #333333;
+  color: #ffffff;
   padding: 10px 20px;
   border-radius: 10px;
   cursor: pointer;
@@ -36,11 +36,11 @@
 }
 
 .back-btn:hover {
-  background-color: #000000;
+  background-color: #333333;
   color: #ffffff;
-  border-color: #000000;
+  border-color: #333333;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
 }
 
 /* Event Hero */
@@ -50,8 +50,8 @@
   align-items: flex-start;
   margin-bottom: 50px;
   padding: 40px;
-  background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
-  border: 2px solid #e0e0e0;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  border: 2px solid #333333;
   border-radius: 16px;
 }
 
@@ -60,15 +60,15 @@
   height: 300px;
   object-fit: cover;
   border-radius: 12px;
-  border: 2px solid #e0e0e0;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  border: 2px solid #333333;
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.1);
 }
 
 .event-hero-placeholder {
   width: 400px;
   height: 300px;
-  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
-  border: 2px solid #e0e0e0;
+  background: linear-gradient(135deg, #2a2a2a 0%, #333333 100%);
+  border: 2px solid #333333;
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -84,8 +84,8 @@
 /* Event Category Badge */
 .event-category-badge {
   display: inline-block;
-  background-color: #000000;
-  color: #ffffff;
+  background-color: #ffffff;
+  color: #000000;
   padding: 8px 16px;
   border-radius: 24px;
   font-size: 14px;
@@ -99,7 +99,7 @@
   font-weight: 800;
   margin-bottom: 20px;
   line-height: 1.2;
-  color: #000000;
+  color: #ffffff;
   letter-spacing: -0.02em;
 }
 
@@ -108,7 +108,7 @@
   font-size: 18px;
   line-height: 1.7;
   margin-bottom: 30px;
-  color: #333333;
+  color: #cccccc;
   font-weight: 500;
 }
 
@@ -122,7 +122,7 @@
 .event-meta-item {
   font-size: 16px;
   line-height: 1.6;
-  color: #666666;
+  color: #999999;
   font-weight: 600;
 }
 

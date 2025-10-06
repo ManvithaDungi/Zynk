@@ -6,38 +6,38 @@
   text-align: center;
   margin-bottom: 40px;
   padding-bottom: 20px;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid #333333;
 }
 
 .settings-header h2 {
   font-size: 36px;
   font-weight: 700;
-  color: #000000;
+  color: #ffffff;
   margin-bottom: 12px;
   letter-spacing: -0.02em;
 }
 
 .settings-header p {
   font-size: 16px;
-  color: #666666;
+  color: #999999;
   margin: 0;
   line-height: 1.6;
 }
 
 /* Settings Form */
 .settings-form {
-  background-color: #ffffff;
-  border: 2px solid #e0e0e0;
+  background-color: #1a1a1a;
+  border: 2px solid #333333;
   border-radius: 12px;
   padding: 35px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.06);
 }
 
 /* Form Sections */
 .form-section {
   margin-bottom: 45px;
   padding-bottom: 35px;
-  border-bottom: 2px solid #f0f0f0;
+  border-bottom: 2px solid #333333;
 }
 
 .form-section:last-of-type {
@@ -49,7 +49,7 @@
 .form-section-title {
   font-size: 24px;
   font-weight: 700;
-  color: #000000;
+  color: #ffffff;
   margin-bottom: 20px;
   letter-spacing: -0.01em;
   position: relative;
@@ -64,20 +64,20 @@
   transform: translateY(-50%);
   width: 4px;
   height: 20px;
-  background: linear-gradient(180deg, #000000 0%, #666666 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #cccccc 100%);
   border-radius: 2px;
 }
 
 .subsection-title {
   font-size: 18px;
   font-weight: 600;
-  color: #000000;
+  color: #ffffff;
   margin: 25px 0 15px 0;
 }
 
 .form-help {
   font-size: 13px;
-  color: #666666;
+  color: #999999;
   margin-top: -10px;
   margin-bottom: 15px;
 }
@@ -98,7 +98,7 @@
 .form-label {
   display: block;
   margin-bottom: 6px;
-  color: #000000;
+  color: #ffffff;
   font-weight: 600;
   font-size: 14px;
 }
@@ -116,13 +116,13 @@
 .form-color {
   width: 100%;
   padding: 10px 14px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid #333333;
   border-radius: 6px;
   font-size: 14px;
   font-family: inherit;
   transition: all 0.3s ease;
-  background-color: #ffffff;
-  color: #000000;
+  background-color: #0a0a0a;
+  color: #ffffff;
 }
 
 .form-input:focus,
@@ -130,14 +130,14 @@
 .form-select:focus,
 .file-input:focus {
   outline: none;
-  border-color: #000000;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+  border-color: #555555;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
 }
 
 .form-input:hover,
 .form-textarea:hover,
 .form-select:hover {
-  border-color: #cccccc;
+  border-color: #555555;
 }
 
 .form-input.error,

@@ -1,7 +1,7 @@
 /* Create Memory Page Styles */
 .create-memory-page {
   min-height: 100vh;
-  background-color: #ffffff;
+  background-color: #000000;
 }
 
 .create-memory-container {
@@ -32,7 +32,7 @@
 .page-header h1 {
   font-size: 48px;
   font-weight: 700;
-  color: #000000;
+  color: #ffffff;
   margin: 20px 0 20px 0;
   letter-spacing: -0.02em;
   line-height: 1.1;
@@ -40,7 +40,7 @@
 
 .page-header p {
   font-size: 20px;
-  color: #666666;
+  color: #999999;
   margin: 0;
   line-height: 1.7;
   font-weight: 500;
@@ -55,12 +55,12 @@
 
 /* Standalone Option */
 .creation-option.standalone {
-  background: #ffffff;
+  background: #1a1a1a;
   border-radius: 12px;
   padding: 40px;
   text-align: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 2px solid #f0f0f0;
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.05);
+  border: 2px solid #333333;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
@@ -73,15 +73,15 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #000000 0%, #666666 50%, #000000 100%);
+  background: linear-gradient(90deg, #ffffff 0%, #cccccc 50%, #ffffff 100%);
   transform: scaleX(0);
   transition: transform 0.3s ease;
 }
 
 .creation-option.standalone:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-  border-color: #000000;
+  box-shadow: 0 8px 30px rgba(255, 255, 255, 0.08);
+  border-color: #555555;
 }
 
 .creation-option.standalone:hover::before {
@@ -96,14 +96,14 @@
 
 .creation-option h3 {
   font-size: 24px;
-  color: #000000;
+  color: #ffffff;
   margin: 0 0 16px 0;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
 .creation-option p {
-  color: #666666;
+  color: #999999;
   line-height: 1.6;
   margin: 0 0 32px 0;
   font-size: 16px;
@@ -112,23 +112,23 @@
 
 /* Album Options */
 .album-options {
-  background: #ffffff;
+  background: #1a1a1a;
   border-radius: 12px;
   padding: 40px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 2px solid #f0f0f0;
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.05);
+  border: 2px solid #333333;
 }
 
 .album-options h3 {
   font-size: 24px;
-  color: #000000;
+  color: #ffffff;
   margin: 0 0 12px 0;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
 .album-options > p {
-  color: #666666;
+  color: #999999;
   margin: 0 0 32px 0;
   font-size: 16px;
   line-height: 1.6;
@@ -141,11 +141,11 @@
 }
 
 .album-option {
-  border: 2px solid #f0f0f0;
+  border: 2px solid #333333;
   border-radius: 12px;
   padding: 24px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: #ffffff;
+  background: #1a1a1a;
   position: relative;
   overflow: hidden;
 }
@@ -157,15 +157,15 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #000000 0%, #666666 50%, #000000 100%);
+  background: linear-gradient(90deg, #ffffff 0%, #cccccc 50%, #ffffff 100%);
   transform: scaleX(0);
   transition: transform 0.3s ease;
 }
 
 .album-option:hover {
-  border-color: #000000;
+  border-color: #555555;
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 30px rgba(255, 255, 255, 0.08);
 }
 
 .album-option:hover::before {
@@ -174,14 +174,14 @@
 
 .album-info h4 {
   font-size: 18px;
-  color: #000000;
+  color: #ffffff;
   margin: 0 0 12px 0;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
 .album-info p {
-  color: #666666;
+  color: #999999;
   margin: 0 0 16px 0;
   font-size: 14px;
   line-height: 1.5;
@@ -204,12 +204,12 @@
 
 /* No Albums State */
 .no-albums {
-  background: #ffffff;
+  background: #1a1a1a;
   border-radius: 12px;
   padding: 60px 40px;
   text-align: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 2px solid #f0f0f0;
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.05);
+  border: 2px solid #333333;
 }
 
 .no-albums-icon {
@@ -220,14 +220,14 @@
 
 .no-albums h3 {
   font-size: 24px;
-  color: #000000;
+  color: #ffffff;
   margin: 0 0 20px 0;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
 .no-albums p {
-  color: #666666;
+  color: #999999;
   line-height: 1.6;
   margin: 0 0 32px 0;
   max-width: 500px;

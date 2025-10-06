@@ -19,11 +19,19 @@ const PrivacyManager = lazy(() => import("./pages/PrivacyManager/PrivacyManager"
 const UserProfile = lazy(() => import("./pages/UserProfile/UserProfile"));
 const Feedback = lazy(() => import("./pages/Feedback/Feedback"));
 const CreateMemory = lazy(() => import("./pages/CreateMemory/CreateMemory"));
+const Memories = lazy(() => import("./pages/Memories/Memories"));
 
 // Analytics module components
 const AnalyticsHome = lazy(() => import("./pages/Analytics/Home"));
 const BulkCategorize = lazy(() => import("./pages/Analytics/BulkCategorize"));
 const AnalyticsFilter = lazy(() => import("./pages/Analytics/AnalyticsFilter"));
+
+// Communication module components
+const Communication = lazy(() => import("./pages/Communication/Communication"));
+const CommunicationDashboard = lazy(() => import("./pages/Communication/Dashboard"));
+const CommunicationChat = lazy(() => import("./pages/Communication/Chat"));
+const CommunicationUsers = lazy(() => import("./pages/Communication/Users"));
+const CommunicationPolls = lazy(() => import("./pages/Communication/Polls"));
 
 // PrivateRoute component to protect routes
 const PrivateRoute = ({ children }) => {
@@ -77,11 +85,19 @@ function AppRoutes() {
         <Route path="/profile" element={<PrivateRoute><UserProfile /></PrivateRoute>} />
         <Route path="/feedback" element={<PrivateRoute><Feedback /></PrivateRoute>} />
         <Route path="/create-memory" element={<PrivateRoute><CreateMemory /></PrivateRoute>} />
+        <Route path="/memories" element={<PrivateRoute><Memories /></PrivateRoute>} />
 
             {/* Analytics module routes */}
             <Route path="/analytics" element={<PrivateRoute><AnalyticsHome /></PrivateRoute>} />
             <Route path="/bulk-categorize" element={<PrivateRoute><BulkCategorize /></PrivateRoute>} />
             <Route path="/analytics-filter" element={<PrivateRoute><AnalyticsFilter /></PrivateRoute>} />
+
+            {/* Communication module routes */}
+            <Route path="/communication" element={<PrivateRoute><Communication /></PrivateRoute>} />
+            <Route path="/communication/dashboard" element={<PrivateRoute><CommunicationDashboard /></PrivateRoute>} />
+            <Route path="/communication/chat" element={<PrivateRoute><CommunicationChat /></PrivateRoute>} />
+            <Route path="/communication/users" element={<PrivateRoute><CommunicationUsers /></PrivateRoute>} />
+            <Route path="/communication/polls" element={<PrivateRoute><CommunicationPolls /></PrivateRoute>} />
 
         <Route path="/" element={<Navigate to={user ? "/home" : "/login"} replace />} />
         {/* Catch-all route for 404 - redirects to home or login */}

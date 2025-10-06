@@ -1,6 +1,7 @@
 /* Memory Viewer Container */
 .memory-viewer {
   padding: 24px;
+  background-color: #000000;
 }
 
 /* Memory Viewer Header */
@@ -15,8 +16,8 @@
 /* Back Button */
 .back-btn {
   background: none;
-  border: 2px solid #e0e0e0;
-  color: #000000;
+  border: 2px solid #333333;
+  color: #ffffff;
   padding: 10px 20px;
   border-radius: 10px;
   cursor: pointer;
@@ -27,11 +28,11 @@
 }
 
 .back-btn:hover {
-  background-color: #000000;
-  color: #ffffff;
-  border-color: #000000;
+  background-color: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
 }
 
 /* Album Info */
@@ -44,12 +45,12 @@
   font-size: 32px;
   font-weight: 800;
   margin-bottom: 12px;
-  color: #000000;
+  color: #ffffff;
   letter-spacing: -0.02em;
 }
 
 .album-info p {
-  color: #666666;
+  color: #999999;
   font-size: 16px;
   line-height: 1.6;
   font-weight: 500;
@@ -68,26 +69,26 @@
 }
 
 .btn-primary {
-  background-color: #000000;
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  background-color: #ffffff;
+  color: #000000;
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.2);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #333333;
+  background-color: #cccccc;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.25);
 }
 
 .btn-secondary {
-  background-color: #ffffff;
-  color: #000000;
-  border: 2px solid #e0e0e0;
+  background-color: #1a1a1a;
+  color: #ffffff;
+  border: 2px solid #333333;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: #f8f8f8;
-  border-color: #000000;
+  background-color: #2a2a2a;
+  border-color: #ffffff;
   transform: translateY(-2px);
 }
 
@@ -104,7 +105,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
@@ -124,14 +125,14 @@
 
 /* Add Memory Form */
 .add-memory-form {
-  background-color: #ffffff;
+  background-color: #1a1a1a;
   padding: 32px;
   border-radius: 16px;
   max-width: 550px;
   width: 90%;
   max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px rgba(255, 255, 255, 0.3);
   animation: slideUp 0.3s ease;
 }
 
@@ -150,7 +151,7 @@
   margin-bottom: 24px;
   font-size: 24px;
   font-weight: 700;
-  color: #000000;
+  color: #ffffff;
   letter-spacing: -0.01em;
 }
 
@@ -165,7 +166,7 @@
 .form-group label {
   font-weight: 700;
   font-size: 14px;
-  color: #000000;
+  color: #ffffff;
   letter-spacing: 0.2px;
 }
 
@@ -173,12 +174,13 @@
 .form-group textarea,
 .form-group select {
   padding: 14px 18px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid #333333;
   border-radius: 12px;
   font-size: 15px;
   font-family: inherit;
   transition: all 0.2s ease;
-  background-color: #ffffff;
+  background-color: #2a2a2a;
+  color: #ffffff;
   min-height: 48px;
 }
 
@@ -186,8 +188,8 @@
 .form-group textarea:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #000000;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+  border-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
 }
 
 .form-group input:hover,
@@ -220,10 +222,10 @@
 
 /* Memory Card */
 .memory-card {
-  border: 2px solid #e0e0e0;
+  border: 2px solid #333333;
   border-radius: 16px;
   overflow: hidden;
-  background-color: #ffffff;
+  background-color: #1a1a1a;
   transition: all 0.3s ease;
   position: relative;
 }
@@ -235,16 +237,16 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #000000 0%, #333333 50%, #000000 100%);
+  background: linear-gradient(90deg, #ffffff 0%, #cccccc 50%, #ffffff 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
   z-index: 1;
 }
 
 .memory-card:hover {
-  border-color: #000000;
+  border-color: #ffffff;
   transform: translateY(-6px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 12px 32px rgba(255, 255, 255, 0.15);
 }
 
 .memory-card:hover::before {
@@ -255,7 +257,7 @@
 .memory-media {
   height: 240px;
   overflow: hidden;
-  background: #f0f0f0;
+  background: #2a2a2a;
 }
 
 .memory-media img,
@@ -280,12 +282,12 @@
   font-size: 18px;
   font-weight: 700;
   margin-bottom: 10px;
-  color: #000000;
+  color: #ffffff;
   letter-spacing: -0.01em;
 }
 
 .memory-description {
-  color: #666666;
+  color: #cccccc;
   font-size: 15px;
   line-height: 1.6;
   margin-bottom: 16px;
@@ -298,7 +300,7 @@
   align-items: center;
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #333333;
   font-size: 13px;
   color: #999999;
   font-weight: 500;
@@ -315,7 +317,7 @@
 .comment-btn,
 .delete-btn {
   background: none;
-  border: 2px solid #e0e0e0;
+  border: 2px solid #333333;
   padding: 8px 14px;
   border-radius: 8px;
   cursor: pointer;
@@ -323,36 +325,37 @@
   font-weight: 600;
   transition: all 0.3s ease;
   letter-spacing: 0.2px;
+  color: #ffffff;
 }
 
 .like-btn:hover,
 .comment-btn:hover {
-  background-color: #f8f8f8;
-  border-color: #000000;
+  background-color: #2a2a2a;
+  border-color: #ffffff;
   transform: translateY(-2px);
 }
 
 .like-btn.liked {
-  background-color: #ffe6e6;
+  background-color: #333333;
   border-color: #ff6b6b;
   color: #ff6b6b;
 }
 
 .delete-btn {
-  color: #dc3545;
-  border-color: #e0e0e0;
+  color: #ff6666;
+  border-color: #333333;
 }
 
 .delete-btn:hover {
-  background-color: #dc3545;
-  border-color: #dc3545;
+  background-color: #ff6666;
+  border-color: #ff6666;
   color: #ffffff;
   transform: translateY(-2px);
 }
 
 /* Comments Section */
 .comments-section {
-  border-top: 2px solid #f0f0f0;
+  border-top: 2px solid #333333;
   padding-top: 16px;
 }
 
@@ -368,19 +371,20 @@
 }
 
 .comments-list::-webkit-scrollbar-track {
-  background: #f0f0f0;
+  background: #2a2a2a;
 }
 
 .comments-list::-webkit-scrollbar-thumb {
-  background: #cccccc;
+  background: #555555;
   border-radius: 3px;
 }
 
 .comment {
   padding: 10px 0;
-  border-bottom: 1px solid #f8f8f8;
+  border-bottom: 1px solid #333333;
   font-size: 14px;
   line-height: 1.5;
+  color: #cccccc;
 }
 
 .comment:last-child {
@@ -404,23 +408,25 @@
 .comment-form input {
   flex: 1;
   padding: 10px 14px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid #333333;
   border-radius: 10px;
   font-size: 14px;
   font-family: inherit;
   transition: all 0.2s ease;
+  background-color: #2a2a2a;
+  color: #ffffff;
 }
 
 .comment-form input:focus {
   outline: none;
-  border-color: #000000;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+  border-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
 }
 
 .comment-form button {
   padding: 10px 18px;
-  background-color: #000000;
-  color: #ffffff;
+  background-color: #ffffff;
+  color: #000000;
   border: none;
   border-radius: 10px;
   cursor: pointer;
@@ -431,7 +437,7 @@
 }
 
 .comment-form button:hover:not(:disabled) {
-  background-color: #333333;
+  background-color: #cccccc;
   transform: translateY(-2px);
 }
 
@@ -445,7 +451,7 @@
   grid-column: 1 / -1;
   text-align: center;
   padding: 80px 20px;
-  color: #666666;
+  color: #999999;
 }
 
 .empty-memories p {
