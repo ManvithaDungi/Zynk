@@ -8,7 +8,6 @@ const path = require("path");
 const http = require("http");
 const socketIo = require("socket.io");
 const jwt = require("jsonwebtoken");
-const router = require("express").Router();
 
 // Import routes
 const authRoutes = require("./routes/auth");
