@@ -15,7 +15,7 @@ NODE_ENV=development
 1. **JWT_SECRET**: Must be at least 32 characters long in production
 2. **MONGO_URI**: 
    - For local development: `mongodb://127.0.0.1:27017/zynk`
-   - For MongoDB Atlas cluster: `mongodb+srv://username:password@cluster.mongodb.net/zynk?retryWrites=true&w=majority`
+   - For MongoDB Atlas cluster: `mongodb+srv://username:password@cluster.mongodb.net/media`
    - Replace `username`, `password`, and `cluster` with your actual MongoDB Atlas credentials
 3. **FRONTEND_URL**: Update for production deployment
 4. **Never commit .env to version control**

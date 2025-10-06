@@ -1,4 +1,4 @@
-const Memory = require("../models/BulkCategorize")
+const Memory = require("../models/Memory")
 
 class BulkCategorizeController {
   // Get memories with pagination and filtering

@@ -1,5 +1,5 @@
 const AnalyticsFilter = require("../models/AnalyticsFilter");
-const Memory = require("../models/BulkCategorize"); // Reusing the Memory model
+const Memory = require("../models/Memory");
 
 // Get analytics data with filters
 exports.getAnalyticsData = async (req, res) => {

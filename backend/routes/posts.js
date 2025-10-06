@@ -3,7 +3,7 @@ const express = require("express")
 const router = express.Router()
 const multer = require("multer")
 const path = require("path")
-const { authenticateTokenToken } = require("../utils/jwtAuth")
+const { authenticateToken } = require("../utils/jwtAuth")
 const Post = require("../models/Post")
 const Album = require("../models/Album")
 
@@ -33,7 +33,7 @@ const upload = multer({
 })
 
 // Create new post with media
-router.post("/", authenticateTokenToken, upload.array("media", 10), async (req, res) => {
+router.post("/", authenticateToken, upload.array("media", 10), async (req, res) => {
   try {
     const { albumId, caption } = req.body
     const files = req.files

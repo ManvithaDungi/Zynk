@@ -1,14 +1,36 @@
 /**
  * Database Seed Script
  * Populates the database with sample data for demo purposes
- * Creates users, messages, and polls with realistic data
+ * Creates users, chat messages, and polls with realistic data
  */
 
 const mongoose = require('mongoose');
-const { connectDB } = require('../../backend_communication/config/database');
-const User = require('../../backend_communication/models/User');
-const Message = require('../../backend_communication/models/Message');
-const Poll = require('../../backend_communication/models/Poll');
+const User = require('../models/User');
+const ChatChatMessage = require('../models/ChatChatMessage');
+const Poll = require('../models/Poll');
+
+// MongoDB connection
+const connectDB = async () => {
+  try {
+    const mongoUri = process.env.MONGO_URI;
+    console.log(`🔗 Connecting to: ${mongoUri.replace(/\/\/.*@/, '//***:***@')}`);
+
+    await mongoose.connect(mongoUri, {
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      tls: true,
+      tlsAllowInvalidCertificates: true,
+      authSource: 'admin',
+      retryWrites: true,
+      w: 'majority'
+    });
+    console.log('✅ Connected to MongoDB');
+  } catch (error) {
+    console.error('❌ MongoDB connection error:', error.message);
+    process.exit(1);
+  }
+};
 
 /**
  * Sample users data
@@ -71,15 +93,15 @@ async function seedUsers() {
  * @param {Array} users - Array of user documents
  * @returns {Promise<Array>} - Array of created message documents
  */
-async function seedMessages(users) {
+async function seedChatMessages(users) {
   try {
     console.log('🌱 Seeding messages...');
     
     // Clear existing messages
-    await Message.deleteMany({});
+    await ChatMessage.deleteMany({});
     
     // Sample messages data
-    const sampleMessages = [
+    const sampleChatMessages = [
       {
         sender: users[0]._id,
         senderName: users[0].username,
@@ -119,7 +141,7 @@ async function seedMessages(users) {
     ];
     
     // Create messages
-    const messages = await Message.insertMany(sampleMessages);
+    const messages = await ChatMessage.insertMany(sampleChatMessages);
     
     console.log(`✅ Created ${messages.length} messages`);
     return messages;
@@ -249,15 +271,15 @@ async function seedDatabase() {
     // Connect to database
     await connectDB();
     
-    // Seed in order: Users -> Messages -> Polls
+    // Seed in order: Users -> ChatMessages -> Polls
     const users = await seedUsers();
-    const messages = await seedMessages(users);
+    const messages = await seedChatMessages(users);
     const polls = await seedPolls(users);
     
     console.log('\n✨ Database seeding completed successfully!');
     console.log('📊 Summary:');
     console.log(`   - Users: ${users.length}`);
-    console.log(`   - Messages: ${messages.length}`);
+    console.log(`   - ChatMessages: ${messages.length}`);
     console.log(`   - Polls: ${polls.length}`);
     console.log('\n🎉 Sample data is ready for use!\n');
     
@@ -280,7 +302,7 @@ async function clearDatabase() {
     console.log('🧹 Clearing database...');
     
     await User.deleteMany({});
-    await Message.deleteMany({});
+    await ChatMessage.deleteMany({});
     await Poll.deleteMany({});
     
     console.log('✅ Database cleared successfully');
@@ -299,7 +321,7 @@ if (require.main === module) {
 module.exports = {
   seedDatabase,
   seedUsers,
-  seedMessages,
+  seedChatMessages,
   seedPolls,
   clearDatabase
 };

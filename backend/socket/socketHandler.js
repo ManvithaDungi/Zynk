@@ -4,9 +4,9 @@
  * Handles chat messages, polls, user status, and live updates
  */
 
-const User = require('../../backend_communication/models/User');
-const Message = require('../../backend_communication/models/Message');
-const Poll = require('../../backend_communication/models/Poll');
+const User = require('../models/User');
+const ChatChatMessage = require('../models/ChatChatMessage');
+const Poll = require('../models/Poll');
 
 /**
  * Initialize Socket.IO with the server
@@ -135,7 +135,7 @@ function initializeSocket(io) {
         const { sender, senderName, content, messageType } = messageData;
         
         // Create message in database
-        const message = await Message.create({
+        const message = await ChatMessage.create({
           sender,
           senderName,
           content,
@@ -162,9 +162,9 @@ function initializeSocket(io) {
       try {
         const { messageId, content } = data;
         
-        const message = await Message.findById(messageId);
+        const message = await ChatMessage.findById(messageId);
         if (message) {
-          await message.editMessage(content);
+          await message.editChatMessage(content);
           await message.populate('sender', 'username email avatar status');
           
           // Broadcast update
@@ -183,7 +183,7 @@ function initializeSocket(io) {
       try {
         const { messageId } = data;
         
-        const message = await Message.findByIdAndDelete(messageId);
+        const message = await ChatMessage.findByIdAndDelete(messageId);
         if (message) {
           // Broadcast deletion
           collaborationNamespace.emit('message:deleted', {
@@ -346,7 +346,7 @@ function initializeSocket(io) {
     socket.on('dashboard:getStats', async () => {
       try {
         const userStats = await User.getUserStats();
-        const messageStats = await Message.getMessageStats();
+        const messageStats = await ChatMessage.getChatMessageStats();
         const pollStats = await Poll.getPollStats();
         
         socket.emit('dashboard:stats', {
@@ -365,7 +365,7 @@ function initializeSocket(io) {
     const dashboardInterval = setInterval(async () => {
       try {
         const userStats = await User.getUserStats();
-        const messageStats = await Message.getMessageStats();
+        const messageStats = await ChatMessage.getChatMessageStats();
         const pollStats = await Poll.getPollStats();
         
         collaborationNamespace.emit('dashboard:statsUpdate', {

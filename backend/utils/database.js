@@ -2,14 +2,32 @@ const mongoose = require("mongoose")
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/zynk", {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    })
-    console.log(`MongoDB Connected: ${conn.connection.host}`)
+    const mongoUri = process.env.MONGO_URI;
+
+    if (!mongoUri) {
+      console.error('❌ MONGO_URI environment variable is not set');
+      process.exit(1);
+    }
+
+    console.log(`🔗 Connecting to: ${mongoUri.replace(/\/\/.*@/, '//***:***@')}`);
+
+    const conn = await mongoose.connect(mongoUri, {
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 15000,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 15000,
+      // SSL/TLS configuration for MongoDB Atlas
+      tls: true,
+      tlsInsecure: true, // For development
+      authSource: 'admin',
+      retryWrites: true,
+      w: 'majority'
+    });
+
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error("Database connection error:", error)
-    process.exit(1)
+    console.error("❌ Database connection error:", error.message);
+    process.exit(1);
   }
 }
 

@@ -54,16 +54,17 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // MongoDB connection with optimized settings - Use MONGO_URI from environment
-const mongoUri = process.env.MONGO_URI;
+const mongoUri = process.env.MONGO_URI || 'mongodb+srv://manvitha:23318@cluster0.ju7oxft.mongodb.net/media?retryWrites=true&w=majority&ssl=true';
 console.log('🔗 Connecting to MongoDB:', mongoUri.replace(/\/\/.*@/, '//***:***@')); // Hide credentials in logs
 
 mongoose.connect(mongoUri, {
   maxPoolSize: 10,
-  serverSelectionTimeoutMS: 5000,
+  serverSelectionTimeoutMS: 15000, // Increased timeout
   socketTimeoutMS: 45000,
+  connectTimeoutMS: 15000, // Added connection timeout
   // SSL/TLS configuration for MongoDB Atlas
   tls: true,
-  tlsAllowInvalidCertificates: true, // For development - set to false in production
+  tlsInsecure: true, // Allow insecure TLS for development
   authSource: 'admin',
   retryWrites: true,
   w: 'majority'

@@ -2,21 +2,26 @@ const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
-    const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/zynk?ssl=false';
-    
-    if (!process.env.MONGO_URI) {
-      console.warn('⚠️  MONGO_URI not set. Using default:', mongoUri);
+    const mongoUri = process.env.MONGO_URI;
+
+    if (!mongoUri) {
+      console.error('❌ MONGO_URI environment variable is not set');
+      process.exit(1);
     }
 
+    console.log(`🔗 Connecting to: ${mongoUri.replace(/\/\/.*@/, '//***:***@')}`);
+
     const conn = await mongoose.connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      ssl: false,
-      tls: false,
-      tlsInsecure: true,
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 15000,
       socketTimeoutMS: 45000,
+      connectTimeoutMS: 15000,
+      // SSL/TLS configuration for MongoDB Atlas
+      tls: true,
+      tlsInsecure: true, // For development
+      authSource: 'admin',
+      retryWrites: true,
+      w: 'majority'
     });
 
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);

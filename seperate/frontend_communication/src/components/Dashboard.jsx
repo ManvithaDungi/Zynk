@@ -9,16 +9,7 @@ import './Dashboard.css';
 
 const API_URL = 'http://localhost:5000/api';
 
-function Dashboard({ 
-  stats = {
-    users: { total: 0, active: 0, offline: 0, onlinePercentage: 0 },
-    messages: { total: 0, today: 0 },
-    polls: { total: 0, active: 0, totalVotes: 0 }
-  }, 
-  users = [], 
-  messages = [], 
-  polls = [] 
-}) {
+function Dashboard({ stats, users, messages, polls }) {
   /**
    * Handle CSV export for users
    */
