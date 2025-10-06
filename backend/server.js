@@ -54,7 +54,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // MongoDB connection with optimized settings - Use MONGO_URI from environment
-const mongoUri = process.env.MONGO_URI ? `${process.env.MONGO_URI}zynk` : "mongodb://127.0.0.1:27017/zynk";
+const mongoUri = process.env.MONGO_URI;
 console.log('🔗 Connecting to MongoDB:', mongoUri.replace(/\/\/.*@/, '//***:***@')); // Hide credentials in logs
 
 mongoose.connect(mongoUri, {

@@ -233,10 +233,17 @@ const samplePosts = [
 // Connect to MongoDB
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/zynk', {
+    const mongoUri = process.env.MONGO_URI;
+    await mongoose.connect(mongoUri, {
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
+      // SSL/TLS configuration for MongoDB Atlas
+      tls: true,
+      tlsAllowInvalidCertificates: true, // For development
+      authSource: 'admin',
+      retryWrites: true,
+      w: 'majority'
     });
     console.log('✅ Connected to MongoDB');
     

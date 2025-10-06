@@ -281,10 +281,18 @@ const sampleAnalytics = [
 
 async function seedDatabase() {
   try {
-    await mongoose.connect(
-      process.env.MONGODB_URI ||
-        "mongodb://localhost:27017/social-timeline"
-    );
+    const mongoUri = process.env.MONGO_URI;
+    await mongoose.connect(mongoUri, {
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      // SSL/TLS configuration for MongoDB Atlas
+      tls: true,
+      tlsAllowInvalidCertificates: true, // For development
+      authSource: 'admin',
+      retryWrites: true,
+      w: 'majority'
+    });
     console.log("Connected to MongoDB");
 
     // Check for existing data and only insert if collections are empty
