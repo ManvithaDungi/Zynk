@@ -1,7 +1,6 @@
 require("dotenv").config();
 
 const express = require("express");
-const router = express.Router(); // ← Add this line
 const mongoose = require("mongoose");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
@@ -55,13 +54,19 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // MongoDB connection with optimized settings - Use MONGO_URI from environment
-const mongoUri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/zynk";
+const mongoUri = process.env.MONGO_URI ? `${process.env.MONGO_URI}zynk` : "mongodb://127.0.0.1:27017/zynk";
 console.log('🔗 Connecting to MongoDB:', mongoUri.replace(/\/\/.*@/, '//***:***@')); // Hide credentials in logs
 
 mongoose.connect(mongoUri, {
   maxPoolSize: 10,
   serverSelectionTimeoutMS: 5000,
   socketTimeoutMS: 45000,
+  // SSL/TLS configuration for MongoDB Atlas
+  tls: true,
+  tlsAllowInvalidCertificates: true, // For development - set to false in production
+  authSource: 'admin',
+  retryWrites: true,
+  w: 'majority'
 });
 
 mongoose.connection.on("connected", () => {
@@ -208,31 +213,6 @@ const gracefulShutdown = async () => {
     process.exit(1);
   }
 };
-
-// In your registration route
-router.post('/register', async (req, res) => {
-  try {
-    console.log('Registration request body:', req.body);
-    
-    const { email, password, name } = req.body;
-    
-    // Add validation
-    if (!email || !password || !name) {
-      return res.status(400).json({ 
-        message: 'Email, password, and name are required' 
-      });
-    }
-    
-    // Rest of your registration logic...
-    
-  } catch (error) {
-    console.error('Detailed registration error:', error);
-    res.status(500).json({ 
-      message: 'Registration failed',
-      error: error.message 
-    });
-  }
-});
 
 process.on("SIGINT", gracefulShutdown);
 process.on("SIGTERM", gracefulShutdown);

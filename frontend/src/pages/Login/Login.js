@@ -1,315 +1,213 @@
-import { useState, useCallback } from "react";
-import { useAuth } from "../../context/AuthContext";
-import { useNavigate } from "react-router-dom";
-import "./Login.css";
+import React, { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import './Login.css';
 
-const Login = () => {
+const Login= () => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
   });
-  const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const { login, register, error: authError, clearError } = useAuth();
+  const { login, register } = useAuth();
   const navigate = useNavigate();
 
-  // Validation rules
-  const validateForm = useCallback(() => {
-    const newErrors = {};
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!emailRegex.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
-
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    } else if (!/(?=.*[A-Za-z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = "Password must contain at least one letter and one number";
-    }
-
-    // Registration-specific validation
-    if (!isLogin) {
-      if (!formData.name) {
-        newErrors.name = "Name is required";
-      } else if (formData.name.length < 2) {
-        newErrors.name = "Name must be at least 2 characters";
-      } else if (formData.name.length > 100) {
-        newErrors.name = "Name cannot exceed 100 characters";
-      }
-
-      if (!formData.confirmPassword) {
-        newErrors.confirmPassword = "Please confirm your password";
-      } else if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = "Passwords do not match";
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [formData, isLogin]);
-
-  const handleInputChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    // Clear error for this field when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
-
-    // Clear auth error when user starts typing
-    if (authError) {
-      clearError();
-    }
-  }, [errors, authError, clearError]);
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+    setError(''); // Clear error when user types
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsSubmitting(true);
+    setError('');
+    setLoading(true);
 
     try {
-      let result;
       if (isLogin) {
-        result = await login(formData.email, formData.password);
+        // Login
+        const result = await login(formData.email, formData.password);
+        if (result.success) {
+          navigate('/');
+        } else {
+          setError(result.error);
+        }
       } else {
-        result = await register(formData.name, formData.email, formData.password);
-      }
+        // Register
+        if (formData.password !== formData.confirmPassword) {
+          setError('Passwords do not match');
+          setLoading(false);
+          return;
+        }
 
-      if (result?.success) {
-        navigate("/home");
+        const result = await register(formData.name, formData.email, formData.password);
+        if (result.success) {
+          navigate('/');
+        } else {
+          setError(result.error);
+        }
       }
     } catch (error) {
-      console.error("Auth error:", error);
-      // Error is handled by AuthContext and displayed via authError
+      setError('An unexpected error occurred');
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
-  const toggleMode = useCallback(() => {
+  const toggleMode = () => {
     setIsLogin(!isLogin);
+    setError('');
     setFormData({
-      name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: ''
     });
-    setErrors({});
-    clearError();
-  }, [isLogin, clearError]);
-
-  const handleTabClick = useCallback((mode) => {
-    if (mode !== isLogin) {
-      toggleMode();
-    }
-  }, [isLogin, toggleMode]);
+  };
 
   return (
     <div className="login-container">
-      <div className="login-wrapper">
+      <div className="login-box">
         <div className="login-header">
           <h1 className="login-title">Zynk</h1>
           <p className="login-subtitle">
-            {isLogin ? "Welcome back" : "Join the community"}
+            {isLogin ? 'Welcome back!' : 'Create your account'}
           </p>
         </div>
 
-        <div className="login-form-container">
-          <div className="login-tabs">
-            <button
-              type="button"
-              className={`login-tab ${isLogin ? "active" : ""}`}
-              onClick={() => handleTabClick(true)}
-              disabled={isSubmitting}
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              className={`login-tab ${!isLogin ? "active" : ""}`}
-              onClick={() => handleTabClick(false)}
-              disabled={isSubmitting}
-            >
-              Sign Up
-            </button>
+        {/* Mode Toggle */}
+        <div className="login-mode-toggle">
+          <button
+            className={`mode-btn ${isLogin ? 'active' : ''}`}
+            onClick={toggleMode}
+            type="button"
+          >
+            Login
+          </button>
+          <button
+            className={`mode-btn ${!isLogin ? 'active' : ''}`}
+            onClick={toggleMode}
+            type="button"
+          >
+            Register
+          </button>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="error-message">
+            {error}
           </div>
+        )}
 
-          <form onSubmit={handleSubmit} className="login-form" noValidate>
-            {authError && (
-              <div className="form-error-message" role="alert">
-                {authError}
-              </div>
-            )}
-
-            {!isLogin && (
-              <div className="form-group">
-                <label htmlFor="name" className="form-label">
-                  Full Name *
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className={`form-input ${errors.name ? "error" : ""}`}
-                  placeholder="Enter your full name"
-                  required={!isLogin}
-                  disabled={isSubmitting}
-                  aria-describedby={errors.name ? "name-error" : undefined}
-                  aria-invalid={!!errors.name}
-                />
-                {errors.name && (
-                  <div id="name-error" className="form-error" role="alert">
-                    {errors.name}
-                  </div>
-                )}
-              </div>
-            )}
-
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="login-form">
+          {!isLogin && (
             <div className="form-group">
-              <label htmlFor="email" className="form-label">
-                Email Address *
-              </label>
+              <label htmlFor="name">Full Name</label>
               <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className={`form-input ${errors.email ? "error" : ""}`}
-                placeholder="Enter your email"
-                required
-                disabled={isSubmitting}
-                aria-describedby={errors.email ? "email-error" : undefined}
-                aria-invalid={!!errors.email}
-                autoComplete="email"
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Enter your full name"
+                className="login-input"
+                disabled={loading}
+                required={!isLogin}
+                minLength={2}
+                maxLength={50}
               />
-              {errors.email && (
-                <div id="email-error" className="form-error" role="alert">
-                  {errors.email}
-                </div>
-              )}
             </div>
+          )}
 
-            <div className="form-group">
-              <label htmlFor="password" className="form-label">
-                Password *
-              </label>
-              <div className="password-input-container">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className={`form-input ${errors.password ? "error" : ""}`}
-                  placeholder="Enter your password"
-                  required
-                  disabled={isSubmitting}
-                  aria-describedby={errors.password ? "password-error" : undefined}
-                  aria-invalid={!!errors.password}
-                  autoComplete={isLogin ? "current-password" : "new-password"}
-                />
-                <button
-                  type="button"
-                  className="password-toggle"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={isSubmitting}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  tabIndex={0}
-                >
-                  {showPassword ? "👁️" : "👁️‍🗨️"}
-                </button>
-              </div>
-              {errors.password && (
-                <div id="password-error" className="form-error" role="alert">
-                  {errors.password}
-                </div>
-              )}
-            </div>
-
-            {!isLogin && (
-              <div className="form-group">
-                <label htmlFor="confirmPassword" className="form-label">
-                  Confirm Password *
-                </label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  className={`form-input ${errors.confirmPassword ? "error" : ""}`}
-                  placeholder="Confirm your password"
-                  required={!isLogin}
-                  disabled={isSubmitting}
-                  aria-describedby={errors.confirmPassword ? "confirm-password-error" : undefined}
-                  aria-invalid={!!errors.confirmPassword}
-                  autoComplete="new-password"
-                />
-                {errors.confirmPassword && (
-                  <div id="confirm-password-error" className="form-error" role="alert">
-                    {errors.confirmPassword}
-                  </div>
-                )}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="btn btn-primary login-submit"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <span className="loading-text">
-                  <span className="loading-spinner-small"></span>
-                  {isLogin ? "Signing In..." : "Creating Account..."}
-                </span>
-              ) : isLogin ? (
-                "Sign In"
-              ) : (
-                "Create Account"
-              )}
-            </button>
-          </form>
-
-          <div className="login-footer">
-            <p>
-              {isLogin ? "Don't have an account? " : "Already have an account? "}
-              <button
-                type="button"
-                className="login-toggle-link"
-                onClick={toggleMode}
-                disabled={isSubmitting}
-              >
-                {isLogin ? "Sign up here" : "Sign in here"}
-              </button>
-            </p>
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Enter your email"
+              className="login-input"
+              disabled={loading}
+              required
+            />
           </div>
+
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Enter your password"
+              className="login-input"
+              disabled={loading}
+              required
+              minLength={8}
+            />
+            {!isLogin && (
+              <small className="password-hint">
+                Password must contain uppercase, lowercase, and numbers (min 8 characters)
+              </small>
+            )}
+          </div>
+
+          {!isLogin && (
+            <div className="form-group">
+              <label htmlFor="confirmPassword">Confirm Password</label>
+              <input
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="Confirm your password"
+                className="login-input"
+                disabled={loading}
+                required={!isLogin}
+                minLength={8}
+              />
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="login-btn"
+            disabled={loading || !formData.email || !formData.password || (!isLogin && (!formData.name || !formData.confirmPassword))}
+          >
+            {loading ? (
+              isLogin ? 'Logging in...' : 'Creating Account...'
+            ) : (
+              isLogin ? 'Login' : 'Create Account'
+            )}
+          </button>
+        </form>
+
+        {/* Additional Info */}
+        <div className="login-footer">
+          <p>
+            {isLogin ? "Don't have an account? " : "Already have an account? "}
+            <button
+              type="button"
+              onClick={toggleMode}
+              className="link-btn"
+              disabled={loading}
+            >
+              {isLogin ? 'Register' : 'Login'}
+            </button>
+          </p>
         </div>
       </div>
     </div>

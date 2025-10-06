@@ -1,13 +1,13 @@
 const express = require('express');
 const User = require('../models/User');
 const Post = require('../models/Post');
-const { authenticateToken } = require('../utils/jwtAuth');
+const { authenticate } = require('./auth');
 const { isValidObjectId, sanitizeString } = require('../utils/validation');
 
 const router = express.Router();
 
 // Get user profile
-router.get('/:userId', authenticateToken, async (req, res) => {
+router.get('/:userId', authenticate, async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -42,7 +42,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
 });
 
 // Update user profile
-router.put('/:userId', authenticateToken, async (req, res) => {
+router.put('/:userId', authenticate, async (req, res) => {
   try {
     const { userId } = req.params;
     const { name, bio, avatar, isPrivate } = req.body;
@@ -52,7 +52,7 @@ router.put('/:userId', authenticateToken, async (req, res) => {
     }
 
     // Check if user is updating their own profile
-    if (userId !== req.user.userId) {
+    if (userId !== req.userId) {
       return res.status(403).json({ message: 'You can only update your own profile' });
     }
 
@@ -87,7 +87,7 @@ router.put('/:userId', authenticateToken, async (req, res) => {
 });
 
 // Follow user
-router.post('/:userId/follow', authenticateToken, async (req, res) => {
+router.post('/:userId/follow', authenticate, async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -95,12 +95,12 @@ router.post('/:userId/follow', authenticateToken, async (req, res) => {
       return res.status(400).json({ message: 'Invalid user ID' });
     }
 
-    if (userId === req.user.userId) {
+    if (userId === req.userId) {
       return res.status(400).json({ message: 'You cannot follow yourself' });
     }
 
     const [currentUser, targetUser] = await Promise.all([
-      User.findById(req.user.userId),
+      User.findById(req.userId),
       User.findById(userId)
     ]);
 
@@ -115,7 +115,7 @@ router.post('/:userId/follow', authenticateToken, async (req, res) => {
 
     // Add to following and followers
     currentUser.following.push(userId);
-    targetUser.followers.push(req.user.userId);
+    targetUser.followers.push(req.userId);
 
     await Promise.all([currentUser.save(), targetUser.save()]);
 
@@ -127,7 +127,7 @@ router.post('/:userId/follow', authenticateToken, async (req, res) => {
 });
 
 // Unfollow user
-router.post('/:userId/unfollow', authenticateToken, async (req, res) => {
+router.post('/:userId/unfollow', authenticate, async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -136,7 +136,7 @@ router.post('/:userId/unfollow', authenticateToken, async (req, res) => {
     }
 
     const [currentUser, targetUser] = await Promise.all([
-      User.findById(req.user.userId),
+      User.findById(req.userId),
       User.findById(userId)
     ]);
 
@@ -149,7 +149,7 @@ router.post('/:userId/unfollow', authenticateToken, async (req, res) => {
       id => id.toString() !== userId
     );
     targetUser.followers = targetUser.followers.filter(
-      id => id.toString() !== req.user.userId
+      id => id.toString() !== req.userId
     );
 
     await Promise.all([currentUser.save(), targetUser.save()]);
@@ -162,7 +162,7 @@ router.post('/:userId/unfollow', authenticateToken, async (req, res) => {
 });
 
 // Get user followers
-router.get('/:userId/followers', authenticateToken, async (req, res) => {
+router.get('/:userId/followers', authenticate, async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -193,7 +193,7 @@ router.get('/:userId/followers', authenticateToken, async (req, res) => {
 });
 
 // Get user following
-router.get('/:userId/following', authenticateToken, async (req, res) => {
+router.get('/:userId/following', authenticate, async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -224,7 +224,7 @@ router.get('/:userId/following', authenticateToken, async (req, res) => {
 });
 
 // Get user posts
-router.get('/:userId/posts', authenticateToken, async (req, res) => {
+router.get('/:userId/posts', authenticate, async (req, res) => {
   try {
     const { userId } = req.params;
     const { page = 1, limit = 10 } = req.query;
@@ -272,7 +272,7 @@ router.get('/:userId/posts', authenticateToken, async (req, res) => {
 });
 
 // Delete user account
-router.delete('/:userId', authenticateToken, async (req, res) => {
+router.delete('/:userId', authenticate, async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -281,7 +281,7 @@ router.delete('/:userId', authenticateToken, async (req, res) => {
     }
 
     // Check if user is deleting their own account
-    if (userId !== req.user.userId) {
+    if (userId !== req.userId) {
       return res.status(403).json({ message: 'You can only delete your own account' });
     }
 
