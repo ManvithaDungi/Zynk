@@ -1,18 +1,18 @@
 /* Auth context styles - minimal since this is just context */
 .auth-error {
-  background-color: #ffe6e6;
-  color: #cc0000;
+  background-color: #2a0a0a;
+  color: #ff6666;
   padding: 10px;
   border-radius: 4px;
   margin-bottom: 15px;
-  border: 1px solid #ffcccc;
+  border: 1px solid #ff3333;
 }
 
 .auth-success {
-  background-color: #e6ffe6;
-  color: #006600;
+  background-color: #0a2a0a;
+  color: #28a745;
   padding: 10px;
   border-radius: 4px;
   margin-bottom: 15px;
-  border: 1px solid #ccffcc;
+  border: 1px solid #28a745;
 }

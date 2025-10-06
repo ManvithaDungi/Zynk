@@ -1,0 +1,334 @@
+/**
+ * Communication Hub Component Styles
+ * Main landing page for communication features
+ * Uses design system variables for consistency
+ */
+
+/* Communication Page */
+.communication-page {
+  min-height: 100vh;
+  background-color: var(--color-black);
+  padding: var(--spacing-2xl);
+}
+
+.communication-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Communication Header */
+.communication-header {
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+  padding-bottom: var(--spacing-2xl);
+  border-bottom: 2px solid var(--color-gray);
+}
+
+.communication-header h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--color-white);
+  margin-bottom: var(--spacing-sm);
+  letter-spacing: -0.02em;
+}
+
+.communication-header p {
+  font-size: 1.2rem;
+  color: var(--color-gray-light);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Communication Tabs */
+.communication-tabs {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-2xl);
+  background-color: var(--color-darker);
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-xl);
+  border: 2px solid var(--color-gray);
+  overflow-x: auto;
+}
+
+.communication-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background-color: transparent;
+  color: var(--color-gray-light);
+  text-decoration: none;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+  min-width: fit-content;
+}
+
+.communication-tab:hover {
+  background-color: var(--color-gray-dark);
+  color: var(--color-white);
+  transform: translateY(-2px);
+}
+
+.communication-tab.active {
+  background-color: var(--color-white);
+  color: var(--color-black);
+  box-shadow: var(--shadow-md);
+}
+
+.tab-icon {
+  font-size: 1.2rem;
+}
+
+.tab-name {
+  font-weight: 600;
+}
+
+/* Communication Content */
+.communication-content {
+  background-color: var(--color-darker);
+  border: 2px solid var(--color-gray);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-2xl);
+  transition: all var(--transition-slow);
+}
+
+.communication-content:hover {
+  border-color: var(--color-gray-medium);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Communication Overview */
+.communication-overview h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--color-white);
+  margin-bottom: var(--spacing-sm);
+  text-align: center;
+}
+
+.communication-overview > p {
+  font-size: 1.1rem;
+  color: var(--color-gray-light);
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+  line-height: 1.6;
+}
+
+/* Feature Grid */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-xl);
+  margin-top: var(--spacing-2xl);
+}
+
+/* Feature Card */
+.feature-card {
+  background-color: var(--color-dark);
+  border: 2px solid var(--color-gray);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  text-align: center;
+  transition: all var(--transition-slow);
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-white) 0%, var(--color-gray-lighter) 50%, var(--color-white) 100%);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.feature-card:hover {
+  border-color: var(--color-white);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+}
+
+.feature-card:hover::before {
+  opacity: 1;
+}
+
+.feature-icon {
+  font-size: 3rem;
+  margin-bottom: var(--spacing-md);
+  display: block;
+}
+
+.feature-card h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-white);
+  margin-bottom: var(--spacing-sm);
+}
+
+.feature-card p {
+  font-size: 1rem;
+  color: var(--color-gray-lighter);
+  line-height: 1.6;
+  margin-bottom: var(--spacing-lg);
+}
+
+.feature-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background-color: var(--color-white);
+  color: var(--color-black);
+  text-decoration: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all var(--transition-base);
+}
+
+.feature-link:hover {
+  background-color: var(--color-white-dim);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .feature-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+  }
+}
+
+@media (max-width: 768px) {
+  .communication-page {
+    padding: var(--spacing-lg);
+  }
+
+  .communication-header h1 {
+    font-size: 2.5rem;
+  }
+
+  .communication-header p {
+    font-size: 1.1rem;
+  }
+
+  .communication-tabs {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .communication-tab {
+    justify-content: center;
+    padding: var(--spacing-md);
+  }
+
+  .communication-content {
+    padding: var(--spacing-lg);
+  }
+
+  .communication-overview h2 {
+    font-size: 1.75rem;
+  }
+
+  .feature-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+
+  .feature-card {
+    padding: var(--spacing-lg);
+  }
+}
+
+@media (max-width: 480px) {
+  .communication-page {
+    padding: var(--spacing-md);
+  }
+
+  .communication-header h1 {
+    font-size: 2rem;
+  }
+
+  .communication-header p {
+    font-size: 1rem;
+  }
+
+  .communication-tab {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.95rem;
+  }
+
+  .tab-icon {
+    font-size: 1.1rem;
+  }
+
+  .communication-content {
+    padding: var(--spacing-md);
+  }
+
+  .communication-overview h2 {
+    font-size: 1.5rem;
+  }
+
+  .feature-card {
+    padding: var(--spacing-md);
+  }
+
+  .feature-icon {
+    font-size: 2.5rem;
+  }
+
+  .feature-card h3 {
+    font-size: 1.3rem;
+  }
+
+  .feature-link {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.9rem;
+  }
+}
+
+/* Focus styles for accessibility */
+.communication-tab:focus,
+.feature-link:focus {
+  outline: 2px solid var(--color-white);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .communication-tabs,
+  .communication-content,
+  .feature-card {
+    border-width: 3px;
+  }
+
+  .communication-tab:focus,
+  .feature-link:focus {
+    outline-width: 3px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .communication-tab,
+  .feature-card,
+  .feature-link {
+    transition: none;
+  }
+
+  .communication-tab:hover,
+  .feature-card:hover,
+  .feature-link:hover {
+    transform: none;
+  }
+}

@@ -26,6 +26,13 @@ const AnalyticsHome = lazy(() => import("./pages/Analytics/Home"));
 const BulkCategorize = lazy(() => import("./pages/Analytics/BulkCategorize"));
 const AnalyticsFilter = lazy(() => import("./pages/Analytics/AnalyticsFilter"));
 
+// Communication module components
+const Communication = lazy(() => import("./pages/Communication/Communication"));
+const CommunicationDashboard = lazy(() => import("./pages/Communication/Dashboard"));
+const CommunicationChat = lazy(() => import("./pages/Communication/Chat"));
+const CommunicationUsers = lazy(() => import("./pages/Communication/Users"));
+const CommunicationPolls = lazy(() => import("./pages/Communication/Polls"));
+
 // PrivateRoute component to protect routes
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -84,6 +91,13 @@ function AppRoutes() {
             <Route path="/analytics" element={<PrivateRoute><AnalyticsHome /></PrivateRoute>} />
             <Route path="/bulk-categorize" element={<PrivateRoute><BulkCategorize /></PrivateRoute>} />
             <Route path="/analytics-filter" element={<PrivateRoute><AnalyticsFilter /></PrivateRoute>} />
+
+            {/* Communication module routes */}
+            <Route path="/communication" element={<PrivateRoute><Communication /></PrivateRoute>} />
+            <Route path="/communication/dashboard" element={<PrivateRoute><CommunicationDashboard /></PrivateRoute>} />
+            <Route path="/communication/chat" element={<PrivateRoute><CommunicationChat /></PrivateRoute>} />
+            <Route path="/communication/users" element={<PrivateRoute><CommunicationUsers /></PrivateRoute>} />
+            <Route path="/communication/polls" element={<PrivateRoute><CommunicationPolls /></PrivateRoute>} />
 
         <Route path="/" element={<Navigate to={user ? "/home" : "/login"} replace />} />
         {/* Catch-all route for 404 - redirects to home or login */}

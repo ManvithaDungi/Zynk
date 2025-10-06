@@ -8,6 +8,7 @@ const path = require("path");
 const http = require("http");
 const socketIo = require("socket.io");
 const jwt = require("jsonwebtoken");
+const router = require("express").Router();
 
 // Import routes
 const authRoutes = require("./routes/auth");
@@ -53,9 +54,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Serve static files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// MongoDB connection with optimized settings - Force local connection
-const mongoUri = "mongodb://127.0.0.1:27017/zynk";
-console.log('🔗 Connecting to local MongoDB:', mongoUri);
+// MongoDB connection with optimized settings - Use MONGO_URI from environment
+const mongoUri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/zynk";
+console.log('🔗 Connecting to MongoDB:', mongoUri.replace(/\/\/.*@/, '//***:***@')); // Hide credentials in logs
 
 mongoose.connect(mongoUri, {
   maxPoolSize: 10,

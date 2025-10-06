@@ -47,6 +47,13 @@ const Navbar = () => {
           </Link>
 
           <Link 
+            to="/communication" 
+            className={`navbar-link ${location.pathname.startsWith("/communication") ? "active" : ""}`}
+          >
+            Communication
+          </Link>
+
+          <Link 
             to="/privacy-manager" 
             className={`navbar-link ${isActive("/privacy-manager") ? "active" : ""}`}
           >

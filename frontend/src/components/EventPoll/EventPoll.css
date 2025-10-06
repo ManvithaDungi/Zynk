@@ -11,12 +11,12 @@
   align-items: center;
   margin-bottom: 32px;
   padding-bottom: 24px;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid #333333;
 }
 
 .polls-header h3 {
   margin: 0;
-  color: #000000;
+  color: #ffffff;
   font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -31,8 +31,8 @@
 
 /* Poll Card */
 .poll-card {
-  background: #ffffff;
-  border: 2px solid #e0e0e0;
+  background: #1a1a1a;
+  border: 2px solid #333333;
   border-radius: 16px;
   padding: 28px;
   transition: all 0.3s ease;
@@ -44,14 +44,14 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, transparent 0%, rgba(0, 0, 0, 0.02) 100%);
+  background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.02) 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
 
 .poll-card:hover {
-  border-color: #000000;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-color: #ffffff;
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.12);
   transform: translateY(-4px);
 }
 
@@ -66,7 +66,7 @@
 
 .poll-header h4 {
   margin: 0 0 12px 0;
-  color: #000000;
+  color: #ffffff;
   font-size: 20px;
   font-weight: 700;
   line-height: 1.4;
@@ -78,13 +78,13 @@
   display: flex;
   gap: 20px;
   font-size: 14px;
-  color: #666666;
+  color: #999999;
   flex-wrap: wrap;
 }
 
 .vote-count {
   font-weight: 600;
-  color: #000000;
+  color: #ffffff;
 }
 
 .expires-at {
@@ -107,8 +107,8 @@
 /* Option Button */
 .option-button {
   width: 100%;
-  background: #ffffff;
-  border: 2px solid #e0e0e0;
+  background: #1a1a1a;
+  border: 2px solid #333333;
   border-radius: 12px;
   padding: 16px 20px;
   cursor: pointer;
@@ -117,8 +117,8 @@
 }
 
 .option-button:hover:not(:disabled) {
-  border-color: #000000;
-  background: #f8f8f8;
+  border-color: #ffffff;
+  background: #2a2a2a;
   transform: translateX(4px);
 }
 
@@ -128,9 +128,9 @@
 }
 
 .option-button.user-vote {
-  border-color: #000000;
-  background: #f0f0f0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: #ffffff;
+  background: #2a2a2a;
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
 }
 
 .option-button.expired {
@@ -149,14 +149,14 @@
 .option-text {
   font-weight: 600;
   font-size: 15px;
-  color: #000000;
+  color: #ffffff;
   letter-spacing: 0.2px;
 }
 
 .option-votes {
   font-size: 14px;
   font-weight: 600;
-  color: #666666;
+  color: #999999;
   white-space: nowrap;
 }
 
@@ -164,14 +164,14 @@
 .option-bar {
   width: 100%;
   height: 8px;
-  background: #e0e0e0;
+  background: #333333;
   border-radius: 4px;
   overflow: hidden;
 }
 
 .option-fill {
   height: 100%;
-  background: linear-gradient(90deg, #000000 0%, #333333 100%);
+  background: linear-gradient(90deg, #ffffff 0%, #cccccc 100%);
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 4px;
 }
@@ -199,7 +199,7 @@
 .no-polls {
   text-align: center;
   padding: 60px 20px;
-  color: #666666;
+  color: #999999;
 }
 
 .no-polls p {
@@ -215,7 +215,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
@@ -235,14 +235,14 @@
 
 /* Modal */
 .modal {
-  background: #ffffff;
+  background: #1a1a1a;
   border-radius: 16px;
   padding: 32px;
   width: 90%;
   max-width: 550px;
   max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px rgba(255, 255, 255, 0.3);
   animation: slideUp 0.3s ease;
 }
 
@@ -259,7 +259,7 @@
 
 .modal h3 {
   margin: 0 0 24px 0;
-  color: #000000;
+  color: #ffffff;
   font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -275,7 +275,7 @@
   margin-bottom: 10px;
   font-weight: 700;
   font-size: 14px;
-  color: #000000;
+  color: #ffffff;
   letter-spacing: 0.2px;
 }
 
@@ -283,18 +283,19 @@
 .form-group input[type="datetime-local"] {
   width: 100%;
   padding: 14px 18px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid #333333;
   border-radius: 12px;
   font-size: 15px;
   font-family: inherit;
   transition: all 0.2s ease;
-  background: #ffffff;
+  background: #2a2a2a;
+  color: #ffffff;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: #000000;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+  border-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
 }
 
 .form-group input[type="checkbox"] {
@@ -320,10 +321,10 @@
 .remove-option-btn {
   width: 38px;
   height: 38px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid #333333;
   border-radius: 50%;
-  background: #ffffff;
-  color: #dc3545;
+  background: #1a1a1a;
+  color: #ff6666;
   cursor: pointer;
   font-size: 18px;
   font-weight: 700;
@@ -335,9 +336,9 @@
 }
 
 .remove-option-btn:hover {
-  background: #dc3545;
+  background: #ff6666;
   color: #ffffff;
-  border-color: #dc3545;
+  border-color: #ff6666;
   transform: rotate(90deg);
 }
 
@@ -347,7 +348,7 @@
   border: 2px dashed #999999;
   border-radius: 12px;
   padding: 12px 20px;
-  color: #000000;
+  color: #ffffff;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
@@ -363,10 +364,10 @@
 }
 
 .add-option-btn:hover {
-  background: #000000;
-  color: #ffffff;
+  background: #ffffff;
+  color: #000000;
   border-style: solid;
-  border-color: #000000;
+  border-color: #ffffff;
 }
 
 /* Form Actions */

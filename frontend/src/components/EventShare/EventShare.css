@@ -9,10 +9,10 @@
   align-items: center;
   gap: 10px;
   padding: 10px 20px;
-  background: #ffffff;
-  border: 2px solid #000000;
+  background: #1a1a1a;
+  border: 2px solid #333333;
   border-radius: 10px;
-  color: #000000;
+  color: #ffffff;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -21,10 +21,10 @@
 }
 
 .share-btn:hover {
-  background: #000000;
-  color: #ffffff;
+  background: #ffffff;
+  color: #000000;
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
 }
 
 .share-icon {
@@ -38,7 +38,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
@@ -58,13 +58,13 @@
 
 /* Share Modal */
 .share-modal {
-  background: #ffffff;
+  background: #1a1a1a;
   border-radius: 16px;
   width: 90%;
   max-width: 600px;
   max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px rgba(255, 255, 255, 0.3);
   animation: slideUp 0.3s ease;
 }
 
@@ -85,14 +85,14 @@
   justify-content: space-between;
   align-items: center;
   padding: 24px 28px;
-  border-bottom: 2px solid #e0e0e0;
-  background: #f8f8f8;
+  border-bottom: 2px solid #333333;
+  background: #2a2a2a;
   border-radius: 16px 16px 0 0;
 }
 
 .share-modal-header h3 {
   margin: 0;
-  color: #000000;
+  color: #ffffff;
   font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -100,10 +100,10 @@
 
 /* Close Button */
 .close-btn {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.05);
   border: none;
   font-size: 24px;
-  color: #666666;
+  color: #999999;
   cursor: pointer;
   padding: 0;
   width: 36px;
@@ -116,8 +116,8 @@
 }
 
 .close-btn:hover {
-  background: #e0e0e0;
-  color: #000000;
+  background: #333333;
+  color: #ffffff;
   transform: rotate(90deg);
 }
 
@@ -128,8 +128,8 @@
 
 /* Event Preview */
 .event-preview {
-  background: #f8f8f8;
-  border: 2px solid #e0e0e0;
+  background: #2a2a2a;
+  border: 2px solid #333333;
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 28px;
@@ -137,7 +137,7 @@
 
 .event-preview h4 {
   margin: 0 0 12px 0;
-  color: #000000;
+  color: #ffffff;
   font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -145,7 +145,7 @@
 
 .event-meta {
   margin: 0 0 14px 0;
-  color: #666666;
+  color: #999999;
   font-size: 14px;
   font-weight: 500;
   line-height: 1.6;
@@ -153,7 +153,7 @@
 
 .event-description {
   margin: 0;
-  color: #333333;
+  color: #cccccc;
   font-size: 15px;
   line-height: 1.6;
 }
@@ -165,7 +165,7 @@
 
 .share-options h4 {
   margin: 0 0 18px 0;
-  color: #000000;
+  color: #ffffff;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -185,51 +185,57 @@
   align-items: center;
   gap: 10px;
   padding: 20px 14px;
-  background: #ffffff;
-  border: 2px solid #e0e0e0;
+  background: #1a1a1a;
+  border: 2px solid #333333;
   border-radius: 12px;
   text-decoration: none;
-  color: #000000;
+  color: #ffffff;
   transition: all 0.3s ease;
   min-height: 100px;
   justify-content: center;
 }
 
 .social-btn:hover {
-  border-color: #000000;
-  background: #f8f8f8;
+  border-color: #ffffff;
+  background: #2a2a2a;
   transform: translateY(-4px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.12);
 }
 
 .social-btn.twitter:hover {
   border-color: #1da1f2;
-  background: #e8f4fd;
+  background: #1a1a1a;
+  color: #1da1f2;
 }
 
 .social-btn.facebook:hover {
   border-color: #1877f2;
-  background: #e7f3ff;
+  background: #1a1a1a;
+  color: #1877f2;
 }
 
 .social-btn.linkedin:hover {
   border-color: #0077b5;
-  background: #e6f2ff;
+  background: #1a1a1a;
+  color: #0077b5;
 }
 
 .social-btn.whatsapp:hover {
   border-color: #25d366;
-  background: #e6f7e6;
+  background: #1a1a1a;
+  color: #25d366;
 }
 
 .social-btn.telegram:hover {
   border-color: #0088cc;
-  background: #e6f2ff;
+  background: #1a1a1a;
+  color: #0088cc;
 }
 
 .social-btn.email:hover {
   border-color: #ea4335;
-  background: #fce8e6;
+  background: #1a1a1a;
+  color: #ea4335;
 }
 
 .social-icon {
@@ -250,7 +256,7 @@
 
 .copy-link-section h4 {
   margin: 0 0 14px 0;
-  color: #000000;
+  color: #ffffff;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -265,28 +271,28 @@
 .link-input {
   flex: 1;
   padding: 14px 18px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid #333333;
   border-radius: 10px;
   font-size: 14px;
   font-family: monospace;
-  background: #f8f8f8;
-  color: #666666;
+  background: #2a2a2a;
+  color: #cccccc;
   transition: all 0.2s ease;
 }
 
 .link-input:focus {
   outline: none;
-  border-color: #000000;
-  background: #ffffff;
+  border-color: #ffffff;
+  background: #1a1a1a;
 }
 
 /* Copy Button */
 .copy-btn {
   padding: 14px 24px;
-  background: #000000;
+  background: #ffffff;
   border: none;
   border-radius: 10px;
-  color: #ffffff;
+  color: #000000;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
@@ -296,9 +302,9 @@
 }
 
 .copy-btn:hover {
-  background: #333333;
+  background: #cccccc;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
 }
 
 .copy-btn.copied {
@@ -309,13 +315,13 @@
 .share-stats {
   text-align: center;
   padding: 20px;
-  background: #f8f8f8;
+  background: #2a2a2a;
   border-radius: 12px;
 }
 
 .share-stats p {
   margin: 0;
-  color: #666666;
+  color: #999999;
   font-size: 15px;
   font-weight: 500;
 }

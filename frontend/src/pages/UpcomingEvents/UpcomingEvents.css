@@ -1,6 +1,6 @@
 .upcoming-events-page {
   min-height: 100vh;
-  background-color: #ffffff;
+  background-color: #000000;
 }
 
 .upcoming-events-container {
@@ -17,20 +17,20 @@
 .page-header h1 {
   font-size: 48px;
   font-weight: 700;
-  color: #000000;
+  color: #ffffff;
   margin-bottom: 16px;
   letter-spacing: -0.02em;
 }
 
 .page-header p {
   font-size: 18px;
-  color: #666666;
+  color: #999999;
   margin: 0;
 }
 
 .events-controls {
-  background-color: #f9f9f9;
-  border: 2px solid #e0e0e0;
+  background-color: #1a1a1a;
+  border: 2px solid #333333;
   border-radius: 8px;
   padding: 30px;
   margin-bottom: 40px;
@@ -43,10 +43,12 @@
 .search-input {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid #333333;
   border-radius: 4px;
   font-size: 16px;
   transition: border-color 0.3s ease;
+  background-color: #0a0a0a;
+  color: #ffffff;
 }
 
 .search-input:focus {
