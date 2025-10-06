@@ -1,6 +1,7 @@
 require("dotenv").config();
 
 const express = require("express");
+const router = express.Router(); // ← Add this line
 const mongoose = require("mongoose");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
@@ -207,6 +208,31 @@ const gracefulShutdown = async () => {
     process.exit(1);
   }
 };
+
+// In your registration route
+router.post('/register', async (req, res) => {
+  try {
+    console.log('Registration request body:', req.body);
+    
+    const { email, password, name } = req.body;
+    
+    // Add validation
+    if (!email || !password || !name) {
+      return res.status(400).json({ 
+        message: 'Email, password, and name are required' 
+      });
+    }
+    
+    // Rest of your registration logic...
+    
+  } catch (error) {
+    console.error('Detailed registration error:', error);
+    res.status(500).json({ 
+      message: 'Registration failed',
+      error: error.message 
+    });
+  }
+});
 
 process.on("SIGINT", gracefulShutdown);
 process.on("SIGTERM", gracefulShutdown);
