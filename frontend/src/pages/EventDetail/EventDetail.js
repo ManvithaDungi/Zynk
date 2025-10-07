@@ -339,8 +339,9 @@ const EventDetail = () => {
               />
               {selectedAlbum && (
                 <MemoryViewer 
-                  albumId={selectedAlbum.id}
-                  onClose={() => setSelectedAlbum(null)}
+                  album={selectedAlbum}
+                  onBack={() => setSelectedAlbum(null)}
+                  isRegistered={event.registeredUsers?.some(user => user.id === user?.id) || false}
                 />
               )}
             </div>

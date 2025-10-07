@@ -2,9 +2,178 @@ const express = require("express")
 const Memory = require("../models/Memory")
 const Album = require("../models/Album")
 const Event = require("../models/Event")
-const auth = require('../middleware/auth'); // Uses the robust combined middleware
+const { authenticate } = require('./auth');
 
 const router = express.Router()
+
+// Get all memories
+router.get("/", authenticate, async (req, res) => {
+  try {
+    const { page = 1, limit = 10, albumId, eventId } = req.query;
+    const skip = (page - 1) * limit;
+
+    const filter = {};
+    if (albumId) filter.album = albumId;
+    if (eventId) filter.event = eventId;
+
+    const memories = await Memory.find(filter)
+      .populate('createdBy', 'name email avatar')
+      .populate('album', 'name description')
+      .populate('event', 'title date location')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Memory.countDocuments(filter);
+
+    res.json({
+      memories: memories.map(memory => ({
+        id: memory._id,
+        title: memory.title,
+        description: memory.description,
+        mediaUrl: memory.mediaUrl,
+        mediaType: memory.mediaType,
+        createdBy: memory.createdBy,
+        album: memory.album,
+        event: memory.event,
+        likesCount: memory.likesCount,
+        commentsCount: memory.commentsCount,
+        isLikedByUser: memory.likes.some(like => like.user.toString() === req.userId),
+        createdAt: memory.createdAt
+      })),
+      pagination: {
+        current: parseInt(page),
+        pages: Math.ceil(total / limit),
+        total
+      }
+    });
+  } catch (error) {
+    console.error("Get memories error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Get memories by album
+router.get("/album/:albumId", authenticate, async (req, res) => {
+  try {
+    const { albumId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
+
+    const memories = await Memory.find({ album: albumId })
+      .populate('createdBy', 'name email avatar')
+      .populate('album', 'name description')
+      .populate('event', 'title date location')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Memory.countDocuments({ album: albumId });
+
+    res.json({
+      memories: memories.map(memory => ({
+        id: memory._id,
+        title: memory.title,
+        description: memory.description,
+        mediaUrl: memory.mediaUrl,
+        mediaType: memory.mediaType,
+        createdBy: memory.createdBy,
+        album: memory.album,
+        event: memory.event,
+        likesCount: memory.likesCount,
+        commentsCount: memory.commentsCount,
+        isLikedByUser: memory.likes.some(like => like.user.toString() === req.userId),
+        createdAt: memory.createdAt
+      })),
+      pagination: {
+        current: parseInt(page),
+        pages: Math.ceil(total / limit),
+        total
+      }
+    });
+  } catch (error) {
+    console.error("Get album memories error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Get memories by event
+router.get("/event/:eventId", authenticate, async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
+
+    const memories = await Memory.find({ event: eventId })
+      .populate('createdBy', 'name email avatar')
+      .populate('album', 'name description')
+      .populate('event', 'title date location')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Memory.countDocuments({ event: eventId });
+
+    res.json({
+      memories: memories.map(memory => ({
+        id: memory._id,
+        title: memory.title,
+        description: memory.description,
+        mediaUrl: memory.mediaUrl,
+        mediaType: memory.mediaType,
+        createdBy: memory.createdBy,
+        album: memory.album,
+        event: memory.event,
+        likesCount: memory.likesCount,
+        commentsCount: memory.commentsCount,
+        isLikedByUser: memory.likes.some(like => like.user.toString() === req.userId),
+        createdAt: memory.createdAt
+      })),
+      pagination: {
+        current: parseInt(page),
+        pages: Math.ceil(total / limit),
+        total
+      }
+    });
+  } catch (error) {
+    console.error("Get event memories error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Get single memory by ID
+router.get("/:id", authenticate, async (req, res) => {
+  try {
+    const memory = await Memory.findById(req.params.id)
+      .populate('createdBy', 'name email avatar')
+      .populate('album', 'name description')
+      .populate('event', 'title date location')
+      .populate('comments.user', 'name email avatar');
+
+    if (!memory) {
+      return res.status(404).json({ message: "Memory not found" });
+    }
+
+    res.json({
+      id: memory._id,
+      title: memory.title,
+      description: memory.description,
+      mediaUrl: memory.mediaUrl,
+      mediaType: memory.mediaType,
+      createdBy: memory.createdBy,
+      album: memory.album,
+      event: memory.event,
+      likesCount: memory.likesCount,
+      commentsCount: memory.commentsCount,
+      comments: memory.comments,
+      isLikedByUser: memory.likes.some(like => like.user.toString() === req.user.id),
+      createdAt: memory.createdAt
+    });
+  } catch (error) {
+    console.error("Get memory error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 
 // Basic input sanitizer to prevent accidental script injection
 const sanitizeInput = (value) => {
@@ -13,7 +182,7 @@ const sanitizeInput = (value) => {
 }
 
 // Create new memory
-router.post("/", auth, async (req, res) => {
+router.post("/", authenticate, async (req, res) => {
   try {
     const { title, description, mediaUrl, mediaType, albumId } = req.body
 
@@ -30,10 +199,10 @@ router.post("/", auth, async (req, res) => {
     }
 
     const event = album.event
-    const isHost = (event.organizer?.toString?.() || event.host?.toString?.()) === req.user.id
+    const isHost = (event.organizer?.toString?.() || event.host?.toString?.()) === req.userId
     const isRegistered = (event.attendees || event.registeredUsers || []).some((reg) => {
       const regId = reg.user ? reg.user.toString() : reg.toString()
-      return regId === req.user.id
+      return regId === req.userId
     })
 
     if (!isHost && !isRegistered) {
@@ -47,7 +216,7 @@ router.post("/", auth, async (req, res) => {
       mediaType: mediaType,
       album: albumId,
       event: event._id,
-      createdBy: req.user.id,
+      createdBy: req.userId,
     })
 
     await memory.save()
@@ -84,14 +253,14 @@ router.post("/", auth, async (req, res) => {
 })
 
 // Like/unlike memory
-router.post("/:id/like", auth, async (req, res) => {
+router.post("/:id/like", authenticate, async (req, res) => {
   try {
     const memory = await Memory.findById(req.params.id)
     if (!memory) {
       return res.status(404).json({ message: "Memory not found" })
     }
 
-    const existingLikeIndex = memory.likes.findIndex((like) => like.user.toString() === req.user.id)
+    const existingLikeIndex = memory.likes.findIndex((like) => like.user.toString() === req.userId)
 
     if (existingLikeIndex > -1) {
       // Unlike
@@ -107,7 +276,7 @@ router.post("/:id/like", auth, async (req, res) => {
     } else {
       // Like
       memory.likes.push({
-        user: req.user.id,
+        user: req.userId,
         likedAt: new Date(),
       })
       memory.likesCount = memory.likes.length
@@ -129,7 +298,7 @@ router.post("/:id/like", auth, async (req, res) => {
 })
 
 // Add comment to memory
-router.post("/:id/comment", auth, async (req, res) => {
+router.post("/:id/comment", authenticate, async (req, res) => {
   try {
     const { text } = req.body
 
@@ -143,7 +312,7 @@ router.post("/:id/comment", auth, async (req, res) => {
     }
 
     memory.comments.push({
-      user: req.user.id,
+      user: req.userId,
       text: sanitizeInput(text),
       createdAt: new Date(),
     })
@@ -174,7 +343,7 @@ router.post("/:id/comment", auth, async (req, res) => {
 })
 
 // Delete memory
-router.delete("/:id", auth, async (req, res) => {
+router.delete("/:id", authenticate, async (req, res) => {
   try {
     const memory = await Memory.findById(req.params.id)
     if (!memory) {
@@ -182,7 +351,7 @@ router.delete("/:id", auth, async (req, res) => {
     }
 
     // Check if user is the creator
-    if (memory.createdBy.toString() !== req.user.id) {
+    if (memory.createdBy.toString() !== req.userId) {
       return res.status(403).json({ message: "Access denied. You can only delete your own memories." })
     }
 
@@ -205,7 +374,7 @@ router.delete("/:id", auth, async (req, res) => {
 })
 
 // Update memory
-router.put("/:id", auth, async (req, res) => {
+router.put("/:id", authenticate, async (req, res) => {
   try {
     const { title, description } = req.body
 

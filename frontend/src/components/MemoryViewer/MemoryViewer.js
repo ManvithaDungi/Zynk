@@ -1,10 +1,10 @@
-import { useState } from "react"
-import { postsAPI } from "../../utils/api"
+import { useState, useEffect } from "react"
+import { memoriesAPI } from "../../utils/api"
 import "./MemoryViewer.css"
 
 const MemoryViewer = ({ album, onBack, isRegistered }) => {
-  const [memories, setMemories] = useState(album.memories || [])
-  // Remove unused loading state to satisfy no-unused-vars
+  const [memories, setMemories] = useState([])
+  const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [adding, setAdding] = useState(false)
   const [newMemory, setNewMemory] = useState({
@@ -13,6 +13,26 @@ const MemoryViewer = ({ album, onBack, isRegistered }) => {
     mediaUrl: "",
     mediaType: "image",
   })
+
+  // Fetch memories when component mounts or album changes
+  useEffect(() => {
+    const fetchMemories = async () => {
+      if (!album?.id) return;
+      
+      try {
+        setLoading(true);
+        const response = await memoriesAPI.getByAlbum(album.id);
+        setMemories(response.data.memories || []);
+      } catch (error) {
+        console.error("Error fetching memories:", error);
+        setMemories([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMemories();
+  }, [album?.id]);
 
   const handleAddMemory = async (e) => {
     e.preventDefault()
@@ -24,7 +44,7 @@ const MemoryViewer = ({ album, onBack, isRegistered }) => {
 
     try {
       setAdding(true)
-      const response = await postsAPI.create({
+      const response = await memoriesAPI.create({
         ...newMemory,
         albumId: album.id,
       })
@@ -43,7 +63,7 @@ const MemoryViewer = ({ album, onBack, isRegistered }) => {
 
   const handleLikeMemory = async (memoryId) => {
     try {
-      const response = await postsAPI.like(memoryId)
+      const response = await memoriesAPI.like(memoryId)
 
       setMemories((prev) =>
         prev.map((memory) =>
@@ -66,7 +86,7 @@ const MemoryViewer = ({ album, onBack, isRegistered }) => {
     if (!commentText.trim()) return
 
     try {
-      const response = await postsAPI.addComment(memoryId, commentText)
+      const response = await memoriesAPI.addComment(memoryId, commentText)
 
       setMemories((prev) =>
         prev.map((memory) =>
@@ -91,7 +111,7 @@ const MemoryViewer = ({ album, onBack, isRegistered }) => {
     }
 
     try {
-      await postsAPI.delete(memoryId)
+      await memoriesAPI.delete(memoryId)
       setMemories((prev) => prev.filter((memory) => memory.id !== memoryId))
       alert("Memory deleted successfully!")
     } catch (error) {
@@ -188,7 +208,11 @@ const MemoryViewer = ({ album, onBack, isRegistered }) => {
       )}
 
       <div className="memories-grid">
-        {memories.length === 0 ? (
+        {loading ? (
+          <div className="loading-memories">
+            <p>Loading memories...</p>
+          </div>
+        ) : memories.length === 0 ? (
           <div className="empty-memories">
             <p>No memories in this album yet.</p>
             {isRegistered && <p>Be the first to add a memory!</p>}

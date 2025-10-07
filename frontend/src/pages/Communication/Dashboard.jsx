@@ -5,9 +5,8 @@
  */
 
 import React from 'react';
+import { exportAPI } from '../../utils/api';
 import './Dashboard.css';
-
-const API_URL = 'http://localhost:5000/api';
 
 function Dashboard({ 
   stats = {
@@ -22,29 +21,77 @@ function Dashboard({
   /**
    * Handle CSV export for users
    */
-  const handleExportUsers = () => {
-    window.open(`${API_URL}/export/users/csv`, '_blank');
+  const handleExportUsers = async () => {
+    try {
+      const response = await exportAPI.exportUsersCSV();
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'users.csv';
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export users error:', error);
+      alert('Failed to export users data');
+    }
   };
 
   /**
    * Handle CSV export for messages
    */
-  const handleExportMessages = () => {
-    window.open(`${API_URL}/export/messages/csv`, '_blank');
+  const handleExportMessages = async () => {
+    try {
+      const response = await exportAPI.exportMessagesCSV();
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'messages.csv';
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export messages error:', error);
+      alert('Failed to export messages data');
+    }
   };
 
   /**
    * Handle CSV export for polls
    */
-  const handleExportPolls = () => {
-    window.open(`${API_URL}/export/polls/csv`, '_blank');
+  const handleExportPolls = async () => {
+    try {
+      const response = await exportAPI.exportPollsCSV();
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'polls.csv';
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export polls error:', error);
+      alert('Failed to export polls data');
+    }
   };
 
   /**
    * Handle JSON export for all data
    */
-  const handleExportAll = () => {
-    window.open(`${API_URL}/export/all/json`, '_blank');
+  const handleExportAll = async () => {
+    try {
+      const response = await exportAPI.exportAllJSON();
+      const blob = new Blob([response.data], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'communication_data.json';
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export all data error:', error);
+      alert('Failed to export all data');
+    }
   };
 
   /**

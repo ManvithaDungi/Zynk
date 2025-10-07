@@ -4,18 +4,23 @@ const chatMessageSchema = new mongoose.Schema({
   event: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Event',
-    required: [true, 'Event is required']
+    required: false // Make optional for general chat
   },
-  user: {
+  sender: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'User is required']
+    required: [true, 'Sender is required']
   },
-  message: {
+  senderName: {
     type: String,
-    required: [true, 'Message is required'],
+    required: [true, 'Sender name is required'],
+    trim: true
+  },
+  content: {
+    type: String,
+    required: [true, 'Message content is required'],
     trim: true,
-    maxlength: [500, 'Message cannot exceed 500 characters']
+    maxlength: [2000, 'Message cannot exceed 2000 characters']
   },
   messageType: {
     type: String,
@@ -47,6 +52,7 @@ const chatMessageSchema = new mongoose.Schema({
 
 // Indexes for better performance
 chatMessageSchema.index({ event: 1, createdAt: -1 });
-chatMessageSchema.index({ user: 1 });
+chatMessageSchema.index({ sender: 1 });
+chatMessageSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('ChatMessage', chatMessageSchema);

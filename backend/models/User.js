@@ -7,6 +7,13 @@ const userSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    lowercase: true
+  },
   email: {
     type: String,
     required: true,
@@ -26,6 +33,19 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: '',
     maxlength: 500
+  },
+  status: {
+    type: String,
+    enum: ['online', 'offline', 'away'],
+    default: 'offline'
+  },
+  isActive: {
+    type: Boolean,
+    default: false
+  },
+  lastActive: {
+    type: Date,
+    default: Date.now
   },
   followers: [{
     type: mongoose.Schema.Types.ObjectId,

@@ -4,27 +4,41 @@ const pollSchema = new mongoose.Schema({
   event: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Event',
-    required: [true, 'Event is required']
+    required: false // Make optional for general polls
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: [true, 'Creator is required']
   },
+  creatorName: {
+    type: String,
+    required: [true, 'Creator name is required'],
+    trim: true
+  },
   question: {
     type: String,
     required: [true, 'Poll question is required'],
     trim: true,
-    maxlength: [200, 'Question cannot exceed 200 characters']
+    maxlength: [500, 'Question cannot exceed 500 characters']
+  },
+  description: {
+    type: String,
+    trim: true,
+    maxlength: [1000, 'Description cannot exceed 1000 characters']
   },
   options: [{
-    text: {
+    optionText: {
       type: String,
       required: true,
       trim: true,
-      maxlength: [100, 'Option text cannot exceed 100 characters']
+      maxlength: [200, 'Option text cannot exceed 200 characters']
     },
-    votes: [{
+    votes: {
+      type: Number,
+      default: 0
+    },
+    voters: [{
       user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
@@ -35,9 +49,23 @@ const pollSchema = new mongoose.Schema({
       }
     }]
   }],
+  votersList: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   allowMultipleVotes: {
     type: Boolean,
     default: false
+  },
+  pollType: {
+    type: String,
+    enum: ['single', 'multiple'],
+    default: 'single'
+  },
+  status: {
+    type: String,
+    enum: ['active', 'closed'],
+    default: 'active'
   },
   isActive: {
     type: Boolean,

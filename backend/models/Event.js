@@ -143,7 +143,7 @@ eventSchema.index({ status: 1, date: 1 });
 
 // Virtual for registration count
 eventSchema.virtual('registrationCount').get(function() {
-  return this.registeredUsers.length;
+  return this.registeredUsers ? this.registeredUsers.length : 0;
 });
 
 // Virtual for average rating

@@ -22,6 +22,9 @@ const tagRoutes = require("./routes/tagRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const pollRoutes = require("./routes/pollRoutes");
 const chatRoutes = require("./routes/chatRoutes");
+const communicationRoutes = require("./routes/communicationRoutes");
+const exportRoutes = require("./routes/exportRoutes");
+const memoryRoutes = require("./routes/memoryRoutes");
 const privacyManagerRoutes = require("./routes/privacyManagerRoutes");
 const feedbackRoutes = require("./routes/feedbackRoutes");
 const adminSettingsRoutes = require("./routes/adminSettingsRoutes");
@@ -53,30 +56,11 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Serve static files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// MongoDB connection with optimized settings - Use MONGO_URI from environment
-const mongoUri = process.env.MONGO_URI || 'mongodb+srv://manvitha:23318@cluster0.ju7oxft.mongodb.net/media?retryWrites=true&w=majority&ssl=true';
-console.log('🔗 Connecting to MongoDB:', mongoUri.replace(/\/\/.*@/, '//***:***@')); // Hide credentials in logs
+// Import database connection
+const connectDB = require('./config/db');
 
-mongoose.connect(mongoUri, {
-  maxPoolSize: 10,
-  serverSelectionTimeoutMS: 15000, // Increased timeout
-  socketTimeoutMS: 45000,
-  connectTimeoutMS: 15000, // Added connection timeout
-  // SSL/TLS configuration for MongoDB Atlas
-  tls: true,
-  tlsInsecure: true, // Allow insecure TLS for development
-  authSource: 'admin',
-  retryWrites: true,
-  w: 'majority'
-});
-
-mongoose.connection.on("connected", () => {
-  console.log("✅ Connected to MongoDB");
-});
-
-mongoose.connection.on("error", (err) => {
-  console.error("❌ MongoDB connection error:", err.message);
-});
+// Connect to MongoDB
+connectDB();
 
 // Socket.io authentication middleware
 io.use((socket, next) => {
@@ -174,6 +158,9 @@ app.use("/api/tags", tagRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/polls", pollRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/communication", communicationRoutes);
+app.use("/api/export", exportRoutes);
+app.use("/api/memories", memoryRoutes);
 app.use("/api/privacyManager", privacyManagerRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/admin/settings", adminSettingsRoutes);

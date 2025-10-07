@@ -13,12 +13,11 @@ const connectDB = async () => {
 
     const conn = await mongoose.connect(mongoUri, {
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 15000,
+      serverSelectionTimeoutMS: 30000,
       socketTimeoutMS: 45000,
-      connectTimeoutMS: 15000,
+      connectTimeoutMS: 30000,
       // SSL/TLS configuration for MongoDB Atlas
       tls: true,
-      tlsInsecure: true, // For development
       authSource: 'admin',
       retryWrites: true,
       w: 'majority'

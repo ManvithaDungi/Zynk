@@ -2,24 +2,25 @@ const express = require('express');
 const Album = require('../models/Album');
 const Event = require('../models/Event');
 const Post = require('../models/Post');
-const { authenticateToken } = require('../utils/jwtAuth');
+const { authenticate } = require('./auth');
 const { isValidObjectId, sanitizeString } = require('../utils/validation');
 
 const router = express.Router();
 
-// Get user's albums
-router.get('/', authenticateToken, async (req, res) => {
+// Get all albums (for Albums page)
+router.get('/', authenticate, async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
     const skip = (page - 1) * limit;
 
-    const albums = await Album.find({ createdBy: req.user.userId })
+    const albums = await Album.find({})
       .populate('eventId', 'title date location')
+      .populate('createdBy', 'name email avatar')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
 
-    const total = await Album.countDocuments({ createdBy: req.user.userId });
+    const total = await Album.countDocuments({});
 
     res.json({
       albums: albums.map(album => ({
@@ -27,8 +28,10 @@ router.get('/', authenticateToken, async (req, res) => {
         name: album.name,
         description: album.description,
         eventId: album.eventId,
+        createdBy: album.createdBy,
         thumbnail: album.thumbnail,
         isPublic: album.isPublic,
+        memoriesCount: album.memories?.length || 0,
         createdAt: album.createdAt
       })),
       pagination: {
@@ -43,8 +46,45 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
+// Get user's albums
+router.get('/my', authenticate, async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
+
+    const albums = await Album.find({ createdBy: req.userId })
+      .populate('eventId', 'title date location')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Album.countDocuments({ createdBy: req.userId });
+
+    res.json({
+      albums: albums.map(album => ({
+        id: album._id,
+        name: album.name,
+        description: album.description,
+        eventId: album.eventId,
+        thumbnail: album.thumbnail,
+        isPublic: album.isPublic,
+        memoriesCount: album.memories?.length || 0,
+        createdAt: album.createdAt
+      })),
+      pagination: {
+        current: parseInt(page),
+        pages: Math.ceil(total / limit),
+        total
+      }
+    });
+  } catch (error) {
+    console.error('Get user albums error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 // Get albums by event
-router.get('/event/:eventId', authenticateToken, async (req, res) => {
+router.get('/event/:eventId', authenticate, async (req, res) => {
   try {
     const { eventId } = req.params;
 
@@ -74,7 +114,7 @@ router.get('/event/:eventId', authenticateToken, async (req, res) => {
 });
 
 // Create album
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticate, async (req, res) => {
   try {
     const { name, description, eventId } = req.body;
 
@@ -86,7 +126,7 @@ router.post('/', authenticateToken, async (req, res) => {
     const albumData = {
       name: sanitizeString(name),
       description: sanitizeString(description || ''),
-      createdBy: req.user.userId
+      createdBy: req.userId
     };
 
     // Add eventId if provided and valid
@@ -120,7 +160,7 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 // Get album by ID
-router.get('/:id', authenticateToken, async (req, res) => {
+router.get('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -155,7 +195,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // Get album posts
-router.get('/:id/posts', authenticateToken, async (req, res) => {
+router.get('/:id/memories', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     const { page = 1, limit = 10 } = req.query;
@@ -201,7 +241,7 @@ router.get('/:id/posts', authenticateToken, async (req, res) => {
 });
 
 // Update album
-router.put('/:id', authenticateToken, async (req, res) => {
+router.put('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     const { name, description, isPublic } = req.body;
@@ -216,7 +256,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     }
 
     // Check if user is the creator
-    if (album.createdBy.toString() !== req.user.userId) {
+    if (album.createdBy.toString() !== req.userId) {
       return res.status(403).json({ message: 'Only the creator can update this album' });
     }
 
@@ -235,7 +275,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
 });
 
 // Delete album
-router.delete('/:id', authenticateToken, async (req, res) => {
+router.delete('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -249,7 +289,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     }
 
     // Check if user is the creator
-    if (album.createdBy.toString() !== req.user.userId) {
+    if (album.createdBy.toString() !== req.userId) {
       return res.status(403).json({ message: 'Only the creator can delete this album' });
     }
 

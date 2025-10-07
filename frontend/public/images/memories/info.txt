@@ -1,0 +1,14 @@
+create an album called food fest :
+add these below images to it 
+mem6.jpg : a bunch of ppl eating
+mem7.jpg : college students eating together
+mem5.jpg : college students eating in a restuarant
+create an albums called biochem lab
+add mem9 , mem2, mem1
+mem1 : two students working in a lab with test tubes
+mem9 : friends in a bio chem lab
+mem2 : two students working in bio chem lab
+create an album called study group and add these
+mem8 : students studying (add them to the event "balance your Uni life")
+create a standalone memory called boad game night and add mem4 to it(event : Board Games Night 2024)
+add a standalone memory of mem3 - bunch of students having fun, singing with a guitar

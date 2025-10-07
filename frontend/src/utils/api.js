@@ -328,6 +328,93 @@ export const chatAPI = {
 };
 
 // ============================================
+// MEMORIES API
+// ============================================
+export const memoriesAPI = {
+  getAll: (params = {}) => 
+    api.get('memories', { params }),
+  
+  getByAlbum: (albumId, params = {}) => 
+    api.get(`memories/album/${albumId}`, { params }),
+  
+  getByEvent: (eventId, params = {}) => 
+    api.get(`memories/event/${eventId}`, { params }),
+  
+  getById: (id) => 
+    api.get(`memories/${id}`),
+  
+  create: (data) => 
+    api.post('memories', data),
+  
+  update: (id, data) => 
+    api.put(`memories/${id}`, data),
+  
+  delete: (id) => 
+    api.delete(`memories/${id}`),
+  
+  like: (id) => 
+    api.post(`memories/${id}/like`),
+  
+  addComment: (id, text) => 
+    api.post(`memories/${id}/comment`, { text }),
+};
+
+// ============================================
+// COMMUNICATION API
+// ============================================
+export const communicationAPI = {
+  // Messages
+  getMessages: (params = {}) => 
+    api.get('communication/messages', { params }),
+  sendMessage: (data) => 
+    api.post('communication/messages', data),
+  editMessage: (messageId, data) => 
+    api.put(`communication/messages/${messageId}`, data),
+  deleteMessage: (messageId) => 
+    api.delete(`communication/messages/${messageId}`),
+  
+  // Polls
+  getPolls: (params = {}) => 
+    api.get('communication/polls', { params }),
+  createPoll: (data) => 
+    api.post('communication/polls', data),
+  votePoll: (pollId, data) => 
+    api.post(`communication/polls/${pollId}/vote`, data),
+  closePoll: (pollId) => 
+    api.put(`communication/polls/${pollId}/close`),
+  deletePoll: (pollId) => 
+    api.delete(`communication/polls/${pollId}`),
+  
+  // Users
+  getUsers: (params = {}) => 
+    api.get('communication/users', { params }),
+  createUser: (data) => 
+    api.post('communication/users', data),
+  updateUser: (userId, data) => 
+    api.put(`communication/users/${userId}`, data),
+  deleteUser: (userId) => 
+    api.delete(`communication/users/${userId}`),
+  
+  // Stats
+  getStats: () => 
+    api.get('communication/stats')
+};
+
+// ============================================
+// EXPORT API
+// ============================================
+export const exportAPI = {
+  exportUsersCSV: () => 
+    api.get('export/users/csv', { responseType: 'blob' }),
+  exportMessagesCSV: () => 
+    api.get('export/messages/csv', { responseType: 'blob' }),
+  exportPollsCSV: () => 
+    api.get('export/polls/csv', { responseType: 'blob' }),
+  exportAllJSON: () => 
+    api.get('export/all/json', { responseType: 'blob' })
+};
+
+// ============================================
 // PRIVACY MANAGER API
 // ============================================
 export const privacyManagerAPI = {

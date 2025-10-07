@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import Navbar from "../../components/Navbar/Navbar";
 import EnhancedMemoryForm from "../../components/EnhancedMemoryForm/EnhancedMemoryForm";
-import { postsAPI } from "../../utils/api";
+import { memoriesAPI } from "../../utils/api";
 import "./Memories.css";
 
 const Memories = () => {
@@ -12,14 +12,14 @@ const Memories = () => {
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState("");
 
-  // Fetch user's memories
+  // Fetch all memories
   useEffect(() => {
     const fetchMemories = async () => {
       try {
         setLoading(true);
         setError("");
-        const response = await postsAPI.getUserPosts();
-        setMemories(response.data.posts);
+        const response = await memoriesAPI.getAll();
+        setMemories(response.data.memories || []);
       } catch (error) {
         console.error("Error fetching memories:", error);
         setError("Failed to load memories. Please try again.");
@@ -44,8 +44,8 @@ const Memories = () => {
   const handleFormSuccess = async (newMemory) => {
     // Refresh memories list by fetching from API
     try {
-      const response = await postsAPI.getUserPosts();
-      setMemories(response.data.posts);
+      const response = await memoriesAPI.getAll();
+      setMemories(response.data.memories || []);
     } catch (error) {
       console.error("Error refreshing memories:", error);
     }
@@ -59,11 +59,11 @@ const Memories = () => {
   const handleDeleteMemory = async (memoryId) => {
     if (window.confirm("Are you sure you want to delete this memory?")) {
       try {
-        await postsAPI.delete(memoryId);
+        await memoriesAPI.delete(memoryId);
         
         // Refresh memories list by fetching from API
-        const response = await postsAPI.getUserPosts();
-        setMemories(response.data.posts);
+        const response = await memoriesAPI.getAll();
+        setMemories(response.data.memories || []);
         
         alert("Memory deleted successfully!");
       } catch (error) {
@@ -152,8 +152,8 @@ const Memories = () => {
               <div key={memory.id} className="memory-card">
                 <div className="memory-image">
                   <img 
-                    src={memory.media?.[0]?.url || "/placeholder.jpg"} 
-                    alt={memory.caption || "Memory"} 
+                    src={memory.mediaUrl || "/placeholder.jpg"} 
+                    alt={memory.title || "Memory"} 
                     onError={(e) => {
                       e.target.src = "/placeholder.jpg";
                     }}
@@ -161,14 +161,17 @@ const Memories = () => {
                 </div>
                 <div className="memory-content">
                   <h3 className="memory-title">
-                    {memory.caption || "Untitled Memory"}
+                    {memory.title || "Untitled Memory"}
                   </h3>
+                  {memory.description && (
+                    <p className="memory-description">{memory.description}</p>
+                  )}
                   <div className="memory-meta">
                     <span className="memory-date">
                       {new Date(memory.createdAt).toLocaleDateString()}
                     </span>
-                    <span className="memory-visibility">
-                      {memory.visibility || "public"}
+                    <span className="memory-author">
+                      by {memory.createdBy?.name || "Unknown"}
                     </span>
                   </div>
                   <div className="memory-stats">
@@ -179,11 +182,6 @@ const Memories = () => {
                       💬 {memory.commentsCount || 0}
                     </span>
                   </div>
-                  {memory.album && (
-                    <div className="memory-album">
-                      📁 {memory.album.name}
-                    </div>
-                  )}
                 </div>
                 <div className="memory-actions">
                   <button 

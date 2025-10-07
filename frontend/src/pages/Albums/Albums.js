@@ -1,27 +1,18 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useAuth } from "../../context/AuthContext";
 import Navbar from "../../components/Navbar/Navbar";
 import EnhancedMemoryForm from "../../components/EnhancedMemoryForm/EnhancedMemoryForm";
-import { albumsAPI, postsAPI } from "../../utils/api";
+import { albumsAPI, memoriesAPI } from "../../utils/api";
 import "./Albums.css";
 
 const Albums = () => {
-  const { user } = useAuth();
   const [albums, setAlbums] = useState([]);
   const [selectedAlbum, setSelectedAlbum] = useState(null);
-  const [posts, setPosts] = useState([]);
+  const [memories, setMemories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateAlbum, setShowCreateAlbum] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [newAlbumName, setNewAlbumName] = useState("");
   const [newAlbumDescription, setNewAlbumDescription] = useState("");
-  
-  // Post creation states
-  const [postCaption, setPostCaption] = useState("");
-  const [mediaFiles, setMediaFiles] = useState([]);
-  const [mediaPreviews, setMediaPreviews] = useState([]);
-  const [captureMode, setCaptureMode] = useState(false);
-  const [stream, setStream] = useState(null);
 
   // Fetch albums
   const fetchAlbums = useCallback(async () => {
@@ -36,13 +27,13 @@ const Albums = () => {
     }
   }, []);
 
-  // Fetch posts for selected album
-  const fetchPosts = useCallback(async (albumId) => {
+  // Fetch memories for selected album
+  const fetchMemories = useCallback(async (albumId) => {
     try {
-      const response = await albumsAPI.getPosts(albumId);
-      setPosts(response.data.posts || []);
+      const response = await memoriesAPI.getByAlbum(albumId);
+      setMemories(response.data.memories || []);
     } catch (error) {
-      console.error("Error fetching posts:", error);
+      console.error("Error fetching memories:", error);
     }
   }, []);
 
@@ -64,134 +55,32 @@ const Albums = () => {
     }
   }, [newAlbumName, newAlbumDescription, albums]);
 
-  // Handle file selection
-  const handleFileSelect = useCallback((e) => {
-    const files = Array.from(e.target.files);
-    setMediaFiles(prev => [...prev, ...files]);
-    
-    const newPreviews = files.map(file => URL.createObjectURL(file));
-    setMediaPreviews(prev => [...prev, ...newPreviews]);
-  }, []);
 
-  // Remove media file
-  const removeMedia = useCallback((index) => {
-    setMediaFiles(prev => prev.filter((_, i) => i !== index));
-    setMediaPreviews(prev => {
-      URL.revokeObjectURL(prev[index]);
-      return prev.filter((_, i) => i !== index);
-    });
-  }, []);
-
-  // Start camera capture
-  const startCapture = useCallback(async () => {
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: true, 
-        audio: false 
-      });
-      setStream(mediaStream);
-      setCaptureMode(true);
-    } catch (error) {
-      console.error("Error accessing camera:", error);
-      alert("Failed to access camera");
-    }
-  }, []);
-
-  // Capture photo from camera
-  const capturePhoto = useCallback(() => {
-    if (!stream) return;
-    
-    const video = document.getElementById("camera-preview");
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext("2d").drawImage(video, 0, 0);
-    
-    canvas.toBlob((blob) => {
-      const file = new File([blob], `capture-${Date.now()}.jpg`, { type: "image/jpeg" });
-      setMediaFiles(prev => [...prev, file]);
-      setMediaPreviews(prev => [...prev, URL.createObjectURL(file)]);
-    }, "image/jpeg");
-  }, [stream]);
-
-  // Stop camera capture
-  const stopCapture = useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
-    }
-    setCaptureMode(false);
-  }, [stream]);
-
-  // Create new post
-  const createPost = useCallback(async (e) => {
-    e.preventDefault();
-    if (!selectedAlbum) {
-      alert("Please select an album first");
-      return;
-    }
-
-    try {
-      const mediaData = mediaFiles.map(file => ({
-        url: URL.createObjectURL(file), // This should be handled by backend
-        type: file.type.startsWith('image/') ? 'image' : 'video',
-        filename: file.name
-      }));
-
-      const response = await postsAPI.create({
-        caption: postCaption,
-        album: selectedAlbum.id,
-        media: mediaData
-      });
-
-      setPosts(prev => [response.data.post, ...prev]);
-      setPostCaption("");
-      setMediaFiles([]);
-      mediaPreviews.forEach(url => URL.revokeObjectURL(url));
-      setMediaPreviews([]);
-      setShowCreatePost(false);
-      stopCapture();
-    } catch (error) {
-      console.error("Error creating post:", error);
-      alert("Failed to create post");
-    }
-  }, [selectedAlbum, postCaption, mediaFiles, mediaPreviews, stopCapture]);
-
-  // Delete post
-  const deletePost = useCallback(async (postId) => {
-    if (!window.confirm("Are you sure you want to delete this post?")) return;
+  // Delete memory
+  const deleteMemory = useCallback(async (memoryId) => {
+    if (!window.confirm("Are you sure you want to delete this memory?")) return;
     
     try {
-      await postsAPI.delete(postId);
-      setPosts(prev => prev.filter(post => post.id !== postId));
+      await memoriesAPI.delete(memoryId);
+      setMemories(prev => prev.filter(memory => memory.id !== memoryId));
     } catch (error) {
-      console.error("Error deleting post:", error);
-      alert("Failed to delete post");
+      console.error("Error deleting memory:", error);
+      alert("Failed to delete memory");
     }
   }, []);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-      // Cleanup media preview URLs
-      mediaPreviews.forEach(url => URL.revokeObjectURL(url));
-    };
-  }, [stream, mediaPreviews]);
 
   // Fetch albums on mount
   useEffect(() => {
     fetchAlbums();
   }, [fetchAlbums]);
 
-  // Fetch posts when album is selected
+  // Fetch memories when album is selected
   useEffect(() => {
     if (selectedAlbum) {
-      fetchPosts(selectedAlbum.id);
+      fetchMemories(selectedAlbum.id);
     }
-  }, [selectedAlbum, fetchPosts]);
+  }, [selectedAlbum, fetchMemories]);
 
   // Memoized album list
   const albumList = useMemo(() => (
@@ -204,48 +93,58 @@ const Albums = () => {
         >
           <h4>{album.name}</h4>
           <p>{album.description}</p>
-          <span className="post-count">{album.postCount || 0} posts</span>
+          <span className="post-count">{album.memoriesCount || 0} memories</span>
         </div>
       ))}
     </div>
   ), [albums, selectedAlbum]);
 
-  // Memoized posts grid
-  const postsGrid = useMemo(() => (
-    <div className="posts-grid">
-      {posts.map(post => (
-        <div key={post.id} className="post-card">
-          <div className="post-media">
-            {post.media && post.media.length > 0 && (
-              <img 
-                src={post.media[0].url} 
-                alt="Post"
-                className="post-image"
-                loading="lazy"
-              />
-            )}
-            {post.media && post.media.length > 1 && (
-              <div className="media-count">
-                +{post.media.length - 1}
-              </div>
-            )}
+  // Memoized memories grid
+  const memoriesGrid = useMemo(() => (
+    <div className="memories-grid">
+      {memories.map(memory => (
+        <div key={memory.id} className="memory-card">
+          <div className="memory-media">
+            <img 
+              src={memory.mediaUrl || "/placeholder.jpg"} 
+              alt={memory.title || "Memory"}
+              className="memory-image"
+              loading="lazy"
+              onError={(e) => {
+                e.target.src = "/placeholder.jpg";
+              }}
+            />
           </div>
-          <div className="post-content">
-            <p className="post-caption">{post.caption}</p>
-            <div className="post-meta">
-              <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+          <div className="memory-content">
+            <h4 className="memory-title">{memory.title || "Untitled Memory"}</h4>
+            {memory.description && (
+              <p className="memory-description">{memory.description}</p>
+            )}
+            <div className="memory-meta">
+              <span className="memory-date">
+                {new Date(memory.createdAt).toLocaleDateString()}
+              </span>
+              <span className="memory-author">
+                by {memory.createdBy?.name || "Unknown"}
+              </span>
+            </div>
+            <div className="memory-stats">
+              <span className="likes-count">❤️ {memory.likesCount || 0}</span>
+              <span className="comments-count">💬 {memory.commentsCount || 0}</span>
+            </div>
+            <div className="memory-actions">
               <button
-                onClick={() => deletePost(post.id)}
+                onClick={() => deleteMemory(memory.id)}
                 className="delete-btn"
               >
-                Delete
+                🗑️ Delete
               </button>
             </div>
           </div>
         </div>
       ))}
     </div>
-  ), [posts, deletePost]);
+  ), [memories, deleteMemory]);
 
   return (
     <div className="albums-page">
@@ -285,10 +184,10 @@ const Albums = () => {
             )}
           </div>
 
-          <div className="posts-section">
+          <div className="memories-section">
             {selectedAlbum ? (
               <>
-                <div className="posts-header">
+                <div className="memories-header">
                   <div>
                     <h2>{selectedAlbum.name}</h2>
                     <p>{selectedAlbum.description}</p>
@@ -301,7 +200,7 @@ const Albums = () => {
                   </button>
                 </div>
 
-                {postsGrid}
+                {memoriesGrid}
               </>
             ) : (
               <div className="empty-state">
@@ -356,21 +255,15 @@ const Albums = () => {
 
         {/* Enhanced Memory Creation Modal */}
         {showCreatePost && (
-          <div className="modal-overlay" onClick={() => {
-            setShowCreatePost(false);
-            stopCapture();
-          }}>
+          <div className="modal-overlay" onClick={() => setShowCreatePost(false)}>
             <div className="modal large-modal" onClick={(e) => e.stopPropagation()}>
               <EnhancedMemoryForm
                 albumId={selectedAlbum?.id}
-                onClose={() => {
-                  setShowCreatePost(false);
-                  stopCapture();
-                }}
+                onClose={() => setShowCreatePost(false)}
                 onSuccess={(newMemory) => {
-                  // Refresh posts after successful creation
+                  // Refresh memories after successful creation
                   if (selectedAlbum) {
-                    fetchPosts(selectedAlbum.id);
+                    fetchMemories(selectedAlbum.id);
                   }
                   setShowCreatePost(false);
                 }}
