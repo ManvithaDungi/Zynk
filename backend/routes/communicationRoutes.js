@@ -2,7 +2,7 @@ const express = require('express');
 const ChatMessage = require('../models/ChatMessage');
 const Poll = require('../models/Poll');
 const User = require('../models/User');
-const { authenticate } = require('./auth');
+const { authenticateToken } = require('../utils/jwtAuth');
 const { isValidObjectId, sanitizeString } = require('../utils/validation');
 
 const router = express.Router();
@@ -10,7 +10,7 @@ const router = express.Router();
 // ==================== GENERAL CHAT ROUTES ====================
 
 // Get all messages (general chat)
-router.get('/messages', authenticate, async (req, res) => {
+router.get('/messages', authenticateToken, async (req, res) => {
   try {
     const { page = 1, limit = 50 } = req.query;
     const skip = (page - 1) * limit;
@@ -48,7 +48,7 @@ router.get('/messages', authenticate, async (req, res) => {
 });
 
 // Send a message (general chat)
-router.post('/messages', authenticate, async (req, res) => {
+router.post('/messages', authenticateToken, async (req, res) => {
   try {
     const { content, messageType = 'text' } = req.body;
 
@@ -56,13 +56,13 @@ router.post('/messages', authenticate, async (req, res) => {
       return res.status(400).json({ message: 'Message content is required' });
     }
 
-    const user = await User.findById(req.userId);
+    const user = await User.findById(req.user.userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     const messageData = {
-      sender: req.userId,
+      sender: req.user.userId,
       senderName: user.username || user.name,
       content: sanitizeString(content),
       messageType: messageType
@@ -91,7 +91,7 @@ router.post('/messages', authenticate, async (req, res) => {
 });
 
 // Edit a message
-router.put('/messages/:messageId', authenticate, async (req, res) => {
+router.put('/messages/:messageId', authenticateToken, async (req, res) => {
   try {
     const { messageId } = req.params;
     const { content } = req.body;
@@ -109,7 +109,7 @@ router.put('/messages/:messageId', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'Message not found' });
     }
 
-    if (message.sender.toString() !== req.userId) {
+    if (message.sender.toString() !== req.user.userId) {
       return res.status(403).json({ message: 'You can only edit your own messages' });
     }
 
@@ -135,7 +135,7 @@ router.put('/messages/:messageId', authenticate, async (req, res) => {
 });
 
 // Delete a message
-router.delete('/messages/:messageId', authenticate, async (req, res) => {
+router.delete('/messages/:messageId', authenticateToken, async (req, res) => {
   try {
     const { messageId } = req.params;
 
@@ -148,7 +148,7 @@ router.delete('/messages/:messageId', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'Message not found' });
     }
 
-    if (message.sender.toString() !== req.userId) {
+    if (message.sender.toString() !== req.user.userId) {
       return res.status(403).json({ message: 'You can only delete your own messages' });
     }
 
@@ -166,7 +166,7 @@ router.delete('/messages/:messageId', authenticate, async (req, res) => {
 // ==================== GENERAL POLL ROUTES ====================
 
 // Get all polls (general)
-router.get('/polls', authenticate, async (req, res) => {
+router.get('/polls', authenticateToken, async (req, res) => {
   try {
     const { page = 1, limit = 20 } = req.query;
     const skip = (page - 1) * limit;
@@ -215,7 +215,7 @@ router.get('/polls', authenticate, async (req, res) => {
 });
 
 // Create a poll (general)
-router.post('/polls', authenticate, async (req, res) => {
+router.post('/polls', authenticateToken, async (req, res) => {
   try {
     const { question, description, options, allowMultipleVotes, pollType, expiresAt } = req.body;
 
@@ -223,13 +223,13 @@ router.post('/polls', authenticate, async (req, res) => {
       return res.status(400).json({ message: 'Question and at least 2 options are required' });
     }
 
-    const user = await User.findById(req.userId);
+    const user = await User.findById(req.user.userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     const pollData = {
-      createdBy: req.userId,
+      createdBy: req.user.userId,
       creatorName: user.username || user.name,
       question: sanitizeString(question),
       description: description ? sanitizeString(description) : '',
@@ -272,7 +272,7 @@ router.post('/polls', authenticate, async (req, res) => {
 });
 
 // Vote on a poll
-router.post('/polls/:pollId/vote', authenticate, async (req, res) => {
+router.post('/polls/:pollId/vote', authenticateToken, async (req, res) => {
   try {
     const { pollId } = req.params;
     const { optionId } = req.body;
@@ -300,13 +300,13 @@ router.post('/polls/:pollId/vote', authenticate, async (req, res) => {
     }
 
     // Check if user already voted
-    const hasVoted = poll.votersList.includes(req.userId);
+    const hasVoted = poll.votersList.includes(req.user.userId);
     if (hasVoted && !poll.allowMultipleVotes) {
       return res.status(400).json({ message: 'You have already voted on this poll' });
     }
 
     // Check if user voted for this specific option
-    const hasVotedForOption = option.voters.some(voter => voter.user.toString() === req.userId);
+    const hasVotedForOption = option.voters.some(voter => voter.user.toString() === req.user.userId);
     if (hasVotedForOption) {
       return res.status(400).json({ message: 'You have already voted for this option' });
     }
@@ -314,13 +314,13 @@ router.post('/polls/:pollId/vote', authenticate, async (req, res) => {
     // Add vote
     option.votes += 1;
     option.voters.push({
-      user: req.userId,
+      user: req.user.userId,
       votedAt: new Date()
     });
 
     // Add to voters list if not already there
-    if (!poll.votersList.includes(req.userId)) {
-      poll.votersList.push(req.userId);
+    if (!poll.votersList.includes(req.user.userId)) {
+      poll.votersList.push(req.user.userId);
     }
 
     // Update total votes
@@ -340,7 +340,7 @@ router.post('/polls/:pollId/vote', authenticate, async (req, res) => {
 });
 
 // Close a poll
-router.put('/polls/:pollId/close', authenticate, async (req, res) => {
+router.put('/polls/:pollId/close', authenticateToken, async (req, res) => {
   try {
     const { pollId } = req.params;
 
@@ -353,7 +353,7 @@ router.put('/polls/:pollId/close', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'Poll not found' });
     }
 
-    if (poll.createdBy.toString() !== req.userId) {
+    if (poll.createdBy.toString() !== req.user.userId) {
       return res.status(403).json({ message: 'Only poll creators can close polls' });
     }
 
@@ -372,7 +372,7 @@ router.put('/polls/:pollId/close', authenticate, async (req, res) => {
 });
 
 // Delete a poll
-router.delete('/polls/:pollId', authenticate, async (req, res) => {
+router.delete('/polls/:pollId', authenticateToken, async (req, res) => {
   try {
     const { pollId } = req.params;
 
@@ -385,7 +385,7 @@ router.delete('/polls/:pollId', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'Poll not found' });
     }
 
-    if (poll.createdBy.toString() !== req.userId) {
+    if (poll.createdBy.toString() !== req.user.userId) {
       return res.status(403).json({ message: 'Only poll creators can delete polls' });
     }
 
@@ -404,7 +404,7 @@ router.delete('/polls/:pollId', authenticate, async (req, res) => {
 // ==================== USER MANAGEMENT ROUTES ====================
 
 // Get all users
-router.get('/users', authenticate, async (req, res) => {
+router.get('/users', authenticateToken, async (req, res) => {
   try {
     const { page = 1, limit = 50 } = req.query;
     const skip = (page - 1) * limit;
@@ -443,7 +443,7 @@ router.get('/users', authenticate, async (req, res) => {
 });
 
 // Create a user
-router.post('/users', authenticate, async (req, res) => {
+router.post('/users', authenticateToken, async (req, res) => {
   try {
     const { username, email, name } = req.body;
 
@@ -493,7 +493,7 @@ router.post('/users', authenticate, async (req, res) => {
 });
 
 // Update a user
-router.put('/users/:userId', authenticate, async (req, res) => {
+router.put('/users/:userId', authenticateToken, async (req, res) => {
   try {
     const { userId } = req.params;
     const { username, email, name, status } = req.body;
@@ -536,7 +536,7 @@ router.put('/users/:userId', authenticate, async (req, res) => {
 });
 
 // Delete a user
-router.delete('/users/:userId', authenticate, async (req, res) => {
+router.delete('/users/:userId', authenticateToken, async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -544,7 +544,7 @@ router.delete('/users/:userId', authenticate, async (req, res) => {
       return res.status(400).json({ message: 'Invalid user ID' });
     }
 
-    if (userId === req.userId) {
+    if (userId === req.user.userId) {
       return res.status(400).json({ message: 'You cannot delete your own account' });
     }
 
@@ -568,7 +568,7 @@ router.delete('/users/:userId', authenticate, async (req, res) => {
 // ==================== DASHBOARD STATS ====================
 
 // Get communication statistics
-router.get('/stats', authenticate, async (req, res) => {
+router.get('/stats', authenticateToken, async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
     const activeUsers = await User.countDocuments({ isActive: true });

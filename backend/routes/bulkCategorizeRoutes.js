@@ -1,11 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const Memory = require("../models/BulkCategorize");
+const BulkCategorize = require("../models/BulkCategorize");
 
 //  Get all memories
 router.get("/memories", async (req, res) => {
   try {
-    const memories = await Memory.find()
+    const memories = await BulkCategorize.find()
       .sort({ createdAt: -1 })
       .select("title description imageUrl author category tags createdAt likes shares comments views");
 
@@ -30,7 +30,7 @@ router.post("/update", async (req, res) => {
     if (tags && Array.isArray(tags)) updateData.tags = tags;
 
     console.log("Incoming update request:", req.body);
-    const result = await Memory.updateMany(
+    const result = await BulkCategorize.updateMany(
       { _id: { $in: memoryIds } },
       { $set: updateData }
     );
@@ -51,7 +51,7 @@ router.post("/like/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
-    const memory = await Memory.findByIdAndUpdate(
+    const memory = await BulkCategorize.findByIdAndUpdate(
       id,
       { $inc: { likes: 1 }, updatedAt: new Date() },
       { new: true }
@@ -71,7 +71,7 @@ router.post("/share/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
-    const memory = await Memory.findByIdAndUpdate(
+    const memory = await BulkCategorize.findByIdAndUpdate(
       id,
       { $inc: { shares: 1 }, updatedAt: new Date() },
       { new: true }
@@ -94,7 +94,7 @@ router.post("/create", async (req, res) => {
     if (!title || !description || !author) {
       return res.status(400).json({ error: "Title, description, and author are required" });
     }
-    const memory = new Memory({
+    const memory = new BulkCategorize({
       title,
       description,
       author,
@@ -117,7 +117,7 @@ router.post("/create", async (req, res) => {
 router.delete("/delete/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await Memory.findByIdAndDelete(id);
+    const result = await BulkCategorize.findByIdAndDelete(id);
     if (!result) {
       return res.status(404).json({ error: "Memory not found" });
     }

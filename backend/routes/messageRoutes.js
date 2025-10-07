@@ -6,7 +6,7 @@
 
 const express = require('express');
 const router = express.Router();
-const ChatChatMessage = require('../models/ChatChatMessage');
+const ChatMessage = require('../models/ChatMessage');
 const User = require('../models/User');
 
 /**
@@ -55,7 +55,11 @@ router.get('/recent', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50;
     
-    const messages = await ChatMessage.getRecentChatMessages(limit);
+    const messages = await ChatMessage.find()
+      .populate('sender', 'username email avatar status')
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .select('-__v');
     
     res.json({
       success: true,
@@ -79,7 +83,13 @@ router.get('/recent', async (req, res) => {
  */
 router.get('/stats', async (req, res) => {
   try {
-    const stats = await ChatMessage.getChatMessageStats();
+    const total = await ChatMessage.countDocuments();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayCount = await ChatMessage.countDocuments({
+      createdAt: { $gte: today }
+    });
+    const stats = { total, today: todayCount };
     
     res.json({
       success: true,
@@ -104,7 +114,10 @@ router.get('/user/:userId', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 100;
     
-    const messages = await ChatMessage.getChatMessagesByUser(req.params.userId, limit);
+    const messages = await ChatMessage.find({ sender: req.params.userId })
+      .populate('sender', 'username email avatar')
+      .sort({ createdAt: -1 })
+      .limit(limit);
     
     res.json({
       success: true,
@@ -139,7 +152,12 @@ router.get('/search', async (req, res) => {
       });
     }
     
-    const messages = await ChatMessage.searchChatMessages(q, limit);
+    const messages = await ChatMessage.find({
+      content: { $regex: q, $options: 'i' }
+    })
+      .populate('sender', 'username avatar')
+      .sort({ createdAt: -1 })
+      .limit(limit);
     
     res.json({
       success: true,
@@ -401,7 +419,11 @@ router.delete('/old/:days', async (req, res) => {
       });
     }
     
-    const result = await ChatMessage.deleteOldChatMessages(days);
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    const result = await ChatMessage.deleteMany({
+      createdAt: { $lt: cutoffDate }
+    });
     
     res.json({
       success: true,

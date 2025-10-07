@@ -2,12 +2,12 @@ const express = require("express")
 const Memory = require("../models/Memory")
 const Album = require("../models/Album")
 const Event = require("../models/Event")
-const { authenticate } = require('./auth');
+const { authenticateToken } = require('../utils/jwtAuth');
 
 const router = express.Router()
 
 // Get all memories
-router.get("/", authenticate, async (req, res) => {
+router.get("/", authenticateToken, async (req, res) => {
   try {
     const { page = 1, limit = 10, albumId, eventId } = req.query;
     const skip = (page - 1) * limit;
@@ -38,7 +38,7 @@ router.get("/", authenticate, async (req, res) => {
         event: memory.event,
         likesCount: memory.likesCount,
         commentsCount: memory.commentsCount,
-        isLikedByUser: memory.likes.some(like => like.user.toString() === req.userId),
+        isLikedByUser: memory.likes.some(like => like.user.toString() === req.user.userId),
         createdAt: memory.createdAt
       })),
       pagination: {
@@ -54,7 +54,7 @@ router.get("/", authenticate, async (req, res) => {
 });
 
 // Get memories by album
-router.get("/album/:albumId", authenticate, async (req, res) => {
+router.get("/album/:albumId", authenticateToken, async (req, res) => {
   try {
     const { albumId } = req.params;
     const { page = 1, limit = 10 } = req.query;
@@ -82,7 +82,7 @@ router.get("/album/:albumId", authenticate, async (req, res) => {
         event: memory.event,
         likesCount: memory.likesCount,
         commentsCount: memory.commentsCount,
-        isLikedByUser: memory.likes.some(like => like.user.toString() === req.userId),
+        isLikedByUser: memory.likes.some(like => like.user.toString() === req.user.userId),
         createdAt: memory.createdAt
       })),
       pagination: {
@@ -98,7 +98,7 @@ router.get("/album/:albumId", authenticate, async (req, res) => {
 });
 
 // Get memories by event
-router.get("/event/:eventId", authenticate, async (req, res) => {
+router.get("/event/:eventId", authenticateToken, async (req, res) => {
   try {
     const { eventId } = req.params;
     const { page = 1, limit = 10 } = req.query;
@@ -126,7 +126,7 @@ router.get("/event/:eventId", authenticate, async (req, res) => {
         event: memory.event,
         likesCount: memory.likesCount,
         commentsCount: memory.commentsCount,
-        isLikedByUser: memory.likes.some(like => like.user.toString() === req.userId),
+        isLikedByUser: memory.likes.some(like => like.user.toString() === req.user.userId),
         createdAt: memory.createdAt
       })),
       pagination: {
@@ -142,7 +142,7 @@ router.get("/event/:eventId", authenticate, async (req, res) => {
 });
 
 // Get single memory by ID
-router.get("/:id", authenticate, async (req, res) => {
+router.get("/:id", authenticateToken, async (req, res) => {
   try {
     const memory = await Memory.findById(req.params.id)
       .populate('createdBy', 'name email avatar')
@@ -166,7 +166,7 @@ router.get("/:id", authenticate, async (req, res) => {
       likesCount: memory.likesCount,
       commentsCount: memory.commentsCount,
       comments: memory.comments,
-      isLikedByUser: memory.likes.some(like => like.user.toString() === req.user.id),
+      isLikedByUser: memory.likes.some(like => like.user.toString() === req.user.userId),
       createdAt: memory.createdAt
     });
   } catch (error) {
@@ -182,7 +182,7 @@ const sanitizeInput = (value) => {
 }
 
 // Create new memory
-router.post("/", authenticate, async (req, res) => {
+router.post("/", authenticateToken, async (req, res) => {
   try {
     const { title, description, mediaUrl, mediaType, albumId } = req.body
 
@@ -199,10 +199,10 @@ router.post("/", authenticate, async (req, res) => {
     }
 
     const event = album.event
-    const isHost = (event.organizer?.toString?.() || event.host?.toString?.()) === req.userId
+    const isHost = (event.organizer?.toString?.() || event.host?.toString?.()) === req.user.userId
     const isRegistered = (event.attendees || event.registeredUsers || []).some((reg) => {
       const regId = reg.user ? reg.user.toString() : reg.toString()
-      return regId === req.userId
+      return regId === req.user.userId
     })
 
     if (!isHost && !isRegistered) {
@@ -216,7 +216,7 @@ router.post("/", authenticate, async (req, res) => {
       mediaType: mediaType,
       album: albumId,
       event: event._id,
-      createdBy: req.userId,
+      createdBy: req.user.userId,
     })
 
     await memory.save()
@@ -253,14 +253,14 @@ router.post("/", authenticate, async (req, res) => {
 })
 
 // Like/unlike memory
-router.post("/:id/like", authenticate, async (req, res) => {
+router.post("/:id/like", authenticateToken, async (req, res) => {
   try {
     const memory = await Memory.findById(req.params.id)
     if (!memory) {
       return res.status(404).json({ message: "Memory not found" })
     }
 
-    const existingLikeIndex = memory.likes.findIndex((like) => like.user.toString() === req.userId)
+    const existingLikeIndex = memory.likes.findIndex((like) => like.user.toString() === req.user.userId)
 
     if (existingLikeIndex > -1) {
       // Unlike
@@ -276,7 +276,7 @@ router.post("/:id/like", authenticate, async (req, res) => {
     } else {
       // Like
       memory.likes.push({
-        user: req.userId,
+        user: req.user.userId,
         likedAt: new Date(),
       })
       memory.likesCount = memory.likes.length
@@ -298,7 +298,7 @@ router.post("/:id/like", authenticate, async (req, res) => {
 })
 
 // Add comment to memory
-router.post("/:id/comment", authenticate, async (req, res) => {
+router.post("/:id/comment", authenticateToken, async (req, res) => {
   try {
     const { text } = req.body
 
@@ -312,7 +312,7 @@ router.post("/:id/comment", authenticate, async (req, res) => {
     }
 
     memory.comments.push({
-      user: req.userId,
+      user: req.user.userId,
       text: sanitizeInput(text),
       createdAt: new Date(),
     })
@@ -343,7 +343,7 @@ router.post("/:id/comment", authenticate, async (req, res) => {
 })
 
 // Delete memory
-router.delete("/:id", authenticate, async (req, res) => {
+router.delete("/:id", authenticateToken, async (req, res) => {
   try {
     const memory = await Memory.findById(req.params.id)
     if (!memory) {
@@ -351,7 +351,7 @@ router.delete("/:id", authenticate, async (req, res) => {
     }
 
     // Check if user is the creator
-    if (memory.createdBy.toString() !== req.userId) {
+    if (memory.createdBy.toString() !== req.user.userId) {
       return res.status(403).json({ message: "Access denied. You can only delete your own memories." })
     }
 
@@ -374,7 +374,7 @@ router.delete("/:id", authenticate, async (req, res) => {
 })
 
 // Update memory
-router.put("/:id", authenticate, async (req, res) => {
+router.put("/:id", authenticateToken, async (req, res) => {
   try {
     const { title, description } = req.body
 
@@ -384,7 +384,7 @@ router.put("/:id", authenticate, async (req, res) => {
     }
 
     // Check if user is the creator
-    if (memory.createdBy.toString() !== req.userId) {
+    if (memory.createdBy.toString() !== req.user.userId) {
       return res.status(403).json({ message: "Access denied. You can only edit your own memories." })
     }
 

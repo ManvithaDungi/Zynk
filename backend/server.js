@@ -28,6 +28,9 @@ const memoryRoutes = require("./routes/memoryRoutes");
 const privacyManagerRoutes = require("./routes/privacyManagerRoutes");
 const feedbackRoutes = require("./routes/feedbackRoutes");
 const adminSettingsRoutes = require("./routes/adminSettingsRoutes");
+const analyticsFilterRoutes = require("./routes/analyticsFilterRoutes");
+const bulkCategorizeRoutes = require("./routes/bulkCategorizeRoutes");
+const messageRoutes = require("./routes/messageRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -164,6 +167,9 @@ app.use("/api/memories", memoryRoutes);
 app.use("/api/privacyManager", privacyManagerRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/admin/settings", adminSettingsRoutes);
+app.use("/api/analytics", analyticsFilterRoutes);
+app.use("/api/bulkcategorize", bulkCategorizeRoutes);
+app.use("/api/messages", messageRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

@@ -2,13 +2,13 @@ const express = require('express');
 const Album = require('../models/Album');
 const Event = require('../models/Event');
 const Post = require('../models/Post');
-const { authenticate } = require('./auth');
+const { authenticateToken } = require('../utils/jwtAuth');
 const { isValidObjectId, sanitizeString } = require('../utils/validation');
 
 const router = express.Router();
 
 // Get all albums (for Albums page)
-router.get('/', authenticate, async (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
     const skip = (page - 1) * limit;
@@ -47,18 +47,18 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // Get user's albums
-router.get('/my', authenticate, async (req, res) => {
+router.get('/my', authenticateToken, async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
     const skip = (page - 1) * limit;
 
-    const albums = await Album.find({ createdBy: req.userId })
+    const albums = await Album.find({ createdBy: req.user.userId })
       .populate('eventId', 'title date location')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
 
-    const total = await Album.countDocuments({ createdBy: req.userId });
+    const total = await Album.countDocuments({ createdBy: req.user.userId });
 
     res.json({
       albums: albums.map(album => ({
@@ -84,7 +84,7 @@ router.get('/my', authenticate, async (req, res) => {
 });
 
 // Get albums by event
-router.get('/event/:eventId', authenticate, async (req, res) => {
+router.get('/event/:eventId', authenticateToken, async (req, res) => {
   try {
     const { eventId } = req.params;
 
@@ -114,7 +114,7 @@ router.get('/event/:eventId', authenticate, async (req, res) => {
 });
 
 // Create album
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   try {
     const { name, description, eventId } = req.body;
 
@@ -126,7 +126,7 @@ router.post('/', authenticate, async (req, res) => {
     const albumData = {
       name: sanitizeString(name),
       description: sanitizeString(description || ''),
-      createdBy: req.userId
+      createdBy: req.user.userId
     };
 
     // Add eventId if provided and valid
@@ -160,7 +160,7 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 // Get album by ID
-router.get('/:id', authenticate, async (req, res) => {
+router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -195,7 +195,7 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // Get album posts
-router.get('/:id/memories', authenticate, async (req, res) => {
+router.get('/:id/memories', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { page = 1, limit = 10 } = req.query;
@@ -241,7 +241,7 @@ router.get('/:id/memories', authenticate, async (req, res) => {
 });
 
 // Update album
-router.put('/:id', authenticate, async (req, res) => {
+router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { name, description, isPublic } = req.body;
@@ -256,7 +256,7 @@ router.put('/:id', authenticate, async (req, res) => {
     }
 
     // Check if user is the creator
-    if (album.createdBy.toString() !== req.userId) {
+    if (album.createdBy.toString() !== req.user.userId) {
       return res.status(403).json({ message: 'Only the creator can update this album' });
     }
 
@@ -275,7 +275,7 @@ router.put('/:id', authenticate, async (req, res) => {
 });
 
 // Delete album
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -289,7 +289,7 @@ router.delete('/:id', authenticate, async (req, res) => {
     }
 
     // Check if user is the creator
-    if (album.createdBy.toString() !== req.userId) {
+    if (album.createdBy.toString() !== req.user.userId) {
       return res.status(403).json({ message: 'Only the creator can delete this album' });
     }
 

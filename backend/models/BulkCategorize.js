@@ -19,5 +19,5 @@ const memorySchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now },
 });
 
-const Memory = mongoose.model("Memory", memorySchema);
-module.exports = Memory;
+const BulkCategorize = mongoose.model("BulkCategorize", memorySchema);
+module.exports = BulkCategorize;

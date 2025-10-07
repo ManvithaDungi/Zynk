@@ -2,12 +2,12 @@ const express = require('express');
 const ChatMessage = require('../models/ChatMessage');
 const Poll = require('../models/Poll');
 const User = require('../models/User');
-const { authenticate } = require('./auth');
+const { authenticateToken } = require('../utils/jwtAuth');
 
 const router = express.Router();
 
 // Export users as CSV
-router.get('/users/csv', authenticate, async (req, res) => {
+router.get('/users/csv', authenticateToken, async (req, res) => {
   try {
     const users = await User.find({}).select('-password').sort({ createdAt: -1 });
 
@@ -27,7 +27,7 @@ router.get('/users/csv', authenticate, async (req, res) => {
 });
 
 // Export messages as CSV
-router.get('/messages/csv', authenticate, async (req, res) => {
+router.get('/messages/csv', authenticateToken, async (req, res) => {
   try {
     const messages = await ChatMessage.find({})
       .populate('sender', 'username name email')
@@ -50,7 +50,7 @@ router.get('/messages/csv', authenticate, async (req, res) => {
 });
 
 // Export polls as CSV
-router.get('/polls/csv', authenticate, async (req, res) => {
+router.get('/polls/csv', authenticateToken, async (req, res) => {
   try {
     const polls = await Poll.find({})
       .populate('createdBy', 'username name email')
@@ -74,7 +74,7 @@ router.get('/polls/csv', authenticate, async (req, res) => {
 });
 
 // Export all data as JSON
-router.get('/all/json', authenticate, async (req, res) => {
+router.get('/all/json', authenticateToken, async (req, res) => {
   try {
     const [users, messages, polls] = await Promise.all([
       User.find({}).select('-password').sort({ createdAt: -1 }),
