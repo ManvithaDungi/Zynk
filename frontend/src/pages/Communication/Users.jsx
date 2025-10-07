@@ -4,15 +4,20 @@
  * Displays all users with real-time updates
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { communicationAPI } from '../../utils/api';
 import './Users.css';
 
-function Users({ socket, currentUser, users }) {
+function Users({ socket, currentUser: propCurrentUser, users: propUsers }) {
+  const { user: authUser } = useAuth();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'active', 'offline'
+  const [users, setUsers] = useState(propUsers || []);
+  const [loading, setLoading] = useState(false);
   
   // Form states
   const [newUsername, setNewUsername] = useState('');
@@ -21,10 +26,34 @@ function Users({ socket, currentUser, users }) {
   const [editEmail, setEditEmail] = useState('');
   const [editStatus, setEditStatus] = useState('offline');
 
+  // Use prop values or fallback to auth user
+  const currentUser = propCurrentUser || authUser;
+
+  /**
+   * Fetch users when component mounts
+   */
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (!propUsers) {
+        try {
+          setLoading(true);
+          const response = await communicationAPI.getUsers();
+          setUsers(response.data.users || []);
+        } catch (error) {
+          console.error('Error fetching users:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchUsers();
+  }, [propUsers]);
+
   /**
    * Handle create user
    */
-  const handleCreateUser = (e) => {
+  const handleCreateUser = async (e) => {
     e.preventDefault();
 
     // Validation
@@ -43,16 +72,26 @@ function Users({ socket, currentUser, users }) {
       return;
     }
 
-    // Emit user creation event
-    socket.emit('user:create', {
-      username: newUsername.trim(),
-      email: newEmail.trim()
-    });
+    try {
+      // Create user via API
+      await communicationAPI.createUser({
+        username: newUsername.trim(),
+        email: newEmail.trim(),
+        name: newUsername.trim() // Use username as name for now
+      });
 
-    // Reset form
-    setNewUsername('');
-    setNewEmail('');
-    setShowCreateForm(false);
+      // Refresh users list
+      const response = await communicationAPI.getUsers();
+      setUsers(response.data.users || []);
+
+      // Reset form
+      setNewUsername('');
+      setNewEmail('');
+      setShowCreateForm(false);
+    } catch (error) {
+      console.error('Error creating user:', error);
+      alert('Failed to create user. Please try again.');
+    }
   };
 
   /**
@@ -70,7 +109,7 @@ function Users({ socket, currentUser, users }) {
   /**
    * Handle update user
    */
-  const handleUpdateUser = (e) => {
+  const handleUpdateUser = async (e) => {
     e.preventDefault();
 
     // Validation
@@ -89,35 +128,51 @@ function Users({ socket, currentUser, users }) {
       return;
     }
 
-    // Emit user update event
-    socket.emit('user:update', {
-      userId: editingUser._id,
-      updates: {
+    try {
+      // Update user via API
+      await communicationAPI.updateUser(editingUser._id, {
         username: editUsername.trim(),
         email: editEmail.trim(),
+        name: editUsername.trim(), // Use username as name for now
         status: editStatus
-      }
-    });
+      });
 
-    // Reset form
-    setEditingUser(null);
-    setEditUsername('');
-    setEditEmail('');
-    setEditStatus('offline');
-    setShowEditForm(false);
+      // Refresh users list
+      const response = await communicationAPI.getUsers();
+      setUsers(response.data.users || []);
+
+      // Reset form
+      setEditingUser(null);
+      setEditUsername('');
+      setEditEmail('');
+      setEditStatus('offline');
+      setShowEditForm(false);
+    } catch (error) {
+      console.error('Error updating user:', error);
+      alert('Failed to update user. Please try again.');
+    }
   };
 
   /**
    * Handle delete user
    */
-  const handleDeleteUser = (userId, username) => {
-    if (userId === currentUser._id) {
+  const handleDeleteUser = async (userId, username) => {
+    if (userId === currentUser?._id) {
       alert('You cannot delete your own account');
       return;
     }
 
     if (window.confirm(`Are you sure you want to delete user "${username}"? This cannot be undone.`)) {
-      socket.emit('user:delete', { userId });
+      try {
+        await communicationAPI.deleteUser(userId);
+        
+        // Refresh users list
+        const response = await communicationAPI.getUsers();
+        setUsers(response.data.users || []);
+      } catch (error) {
+        console.error('Error deleting user:', error);
+        alert('Failed to delete user. Please try again.');
+      }
     }
   };
 
@@ -135,7 +190,7 @@ function Users({ socket, currentUser, users }) {
   /**
    * Filter and search users
    */
-  const filteredUsers = users.filter(user => {
+  const filteredUsers = (users || []).filter(user => {
     // Filter by status
     if (filterStatus === 'active' && !user.isActive) return false;
     if (filterStatus === 'offline' && user.isActive) return false;
@@ -144,8 +199,9 @@ function Users({ socket, currentUser, users }) {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
-        user.username.toLowerCase().includes(query) ||
-        user.email.toLowerCase().includes(query)
+        (user.username || '').toLowerCase().includes(query) ||
+        (user.email || '').toLowerCase().includes(query) ||
+        (user.name || '').toLowerCase().includes(query)
       );
     }
 
@@ -158,7 +214,7 @@ function Users({ socket, currentUser, users }) {
   const sortedUsers = [...filteredUsers].sort((a, b) => {
     if (a.isActive && !b.isActive) return -1;
     if (!a.isActive && b.isActive) return 1;
-    return a.username.localeCompare(b.username);
+    return (a.username || a.name || '').localeCompare(b.username || b.name || '');
   });
 
   /**
@@ -194,7 +250,7 @@ function Users({ socket, currentUser, users }) {
             setShowEditForm(false);
           }}
         >
-          {showCreateForm ? '❌ Cancel' : '➕ Add User'}
+          {showCreateForm ? 'Cancel' : 'Add User'}
         </button>
       </div>
 
@@ -215,19 +271,19 @@ function Users({ socket, currentUser, users }) {
             className={`filter-btn ${filterStatus === 'all' ? 'active' : ''}`}
             onClick={() => setFilterStatus('all')}
           >
-            All ({users.length})
+            All ({(users || []).length})
           </button>
           <button
             className={`filter-btn ${filterStatus === 'active' ? 'active' : ''}`}
             onClick={() => setFilterStatus('active')}
           >
-            🟢 Active ({users.filter(u => u.isActive).length})
+            Active ({(users || []).filter(u => u.isActive).length})
           </button>
           <button
             className={`filter-btn ${filterStatus === 'offline' ? 'active' : ''}`}
             onClick={() => setFilterStatus('offline')}
           >
-            ⚪ Offline ({users.filter(u => !u.isActive).length})
+            Offline ({(users || []).filter(u => !u.isActive).length})
           </button>
         </div>
       </div>
@@ -346,9 +402,14 @@ function Users({ socket, currentUser, users }) {
 
       {/* Users List */}
       <div className="users-list">
-        {sortedUsers.length === 0 ? (
+        {loading ? (
           <div className="empty-users">
-            {/* <div className="empty-users-icon">👥</div> */}
+            {/* <div className="empty-users-icon"></div> */}
+            <p>Loading users...</p>
+          </div>
+        ) : sortedUsers.length === 0 ? (
+          <div className="empty-users">
+            {/* <div className="empty-users-icon"></div> */}
             <p>No users found matching your search.</p>
           </div>
         ) : (
@@ -361,7 +422,7 @@ function Users({ socket, currentUser, users }) {
                   {/* User Avatar */}
                   <div className="user-card-avatar">
                     <div className={`avatar ${user.isActive ? 'active' : ''}`}>
-                      {user.avatar || user.username.substring(0, 2).toUpperCase()}
+                      {user.avatar || (user.username || user.name || 'U').substring(0, 2).toUpperCase()}
                     </div>
                     <div className={`status-indicator ${user.status}`}></div>
                   </div>
@@ -369,17 +430,14 @@ function Users({ socket, currentUser, users }) {
                   {/* User Info */}
                   <div className="user-card-info">
                     <h3 className="user-card-name">
-                      {user.username}
+                      {user.username || user.name}
                       {isCurrentUser && <span className="you-badge">You</span>}
                     </h3>
                     <p className="user-card-email">{user.email}</p>
                     
                     <div className="user-card-meta">
                       <span className={`status-badge ${user.status}`}>
-                        {user.status === 'online' && '🟢'}
-                        {user.status === 'offline' && '⚪'}
-                        {user.status === 'away' && '🟡'}
-                        {' '}{user.status}
+                        {user.status}
                       </span>
                       <span className="last-active">
                         Last active: {formatLastActive(user.lastActive)}
@@ -422,16 +480,16 @@ function Users({ socket, currentUser, users }) {
       <div className="users-footer">
         <div className="users-stats">
           <span className="stat-item">
-            Total Users: {users.length}
+            Total Users: {(users || []).length}
           </span>
           <span className="stat-item">
-            Active: {users.filter(u => u.isActive).length}
+            Active: {(users || []).filter(u => u.isActive).length}
           </span>
           <span className="stat-item">
-            Offline: {users.filter(u => !u.isActive).length}
+            Offline: {(users || []).filter(u => !u.isActive).length}
           </span>
           <span className="stat-item">
-            Activity Rate: {users.length > 0 ? ((users.filter(u => u.isActive).length / users.length) * 100).toFixed(1) : 0}%
+            Activity Rate: {(users || []).length > 0 ? (((users || []).filter(u => u.isActive).length / (users || []).length) * 100).toFixed(1) : 0}%
           </span>
         </div>
       </div>

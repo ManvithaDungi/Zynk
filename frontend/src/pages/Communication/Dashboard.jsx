@@ -4,20 +4,55 @@
  * Shows user stats, message stats, poll stats, and active users
  */
 
-import React from 'react';
-import { exportAPI } from '../../utils/api';
+import React, { useState, useEffect } from 'react';
+import { exportAPI, communicationAPI } from '../../utils/api';
 import './Dashboard.css';
 
 function Dashboard({ 
-  stats = {
+  stats: propStats = {
     users: { total: 0, active: 0, offline: 0, onlinePercentage: 0 },
     messages: { total: 0, today: 0 },
     polls: { total: 0, active: 0, totalVotes: 0 }
   }, 
-  users = [], 
-  messages = [], 
-  polls = [] 
+  users: propUsers = [], 
+  messages: propMessages = [], 
+  polls: propPolls = [] 
 }) {
+  const [stats, setStats] = useState(propStats);
+  const [users, setUsers] = useState(propUsers);
+  const [messages, setMessages] = useState(propMessages);
+  const [polls, setPolls] = useState(propPolls);
+  const [loading, setLoading] = useState(false);
+
+  /**
+   * Fetch dashboard data when component mounts
+   */
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!propStats && !propUsers && !propMessages && !propPolls) {
+        try {
+          setLoading(true);
+          const [statsResponse, usersResponse, messagesResponse, pollsResponse] = await Promise.all([
+            communicationAPI.getStats(),
+            communicationAPI.getUsers(),
+            communicationAPI.getMessages(),
+            communicationAPI.getPolls()
+          ]);
+          
+          setStats(statsResponse.data || propStats);
+          setUsers(usersResponse.data.users || []);
+          setMessages(messagesResponse.data.messages || []);
+          setPolls(pollsResponse.data.polls || []);
+        } catch (error) {
+          console.error('Error fetching dashboard data:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchDashboardData();
+  }, [propStats, propUsers, propMessages, propPolls]);
   /**
    * Handle CSV export for users
    */
@@ -97,17 +132,17 @@ function Dashboard({
   /**
    * Get active users list
    */
-  const activeUsers = users.filter(u => u.isActive);
+  const activeUsers = (users || []).filter(u => u.isActive);
 
   /**
    * Get recent messages (last 5)
    */
-  const recentMessages = messages.slice(0, 5);
+  const recentMessages = (messages || []).slice(0, 5);
 
   /**
    * Get active polls
    */
-  const activePolls = polls.filter(p => p.isActive && p.status === 'active');
+  const activePolls = (polls || []).filter(p => p.isActive && p.status === 'active');
 
   return (
     <div className="dashboard">
@@ -120,7 +155,7 @@ function Dashboard({
       <div className="stats-grid">
         {/* User Statistics */}
         <div className="stat-card">
-          {/* <div className="stat-icon">👥</div> */}
+          {/* <div className="stat-icon"></div> */}
           <div className="stat-content">
             <h3 className="stat-title">Users</h3>
             <div className="stat-value">{stats.users.total || 0}</div>
@@ -139,7 +174,7 @@ function Dashboard({
 
         {/* Message Statistics */}
         <div className="stat-card">
-          {/* <div className="stat-icon">💬</div> */}
+          {/* <div className="stat-icon"></div> */}
           <div className="stat-content">
             <h3 className="stat-title">Messages</h3>
             <div className="stat-value">{stats.messages.total || 0}</div>
@@ -153,7 +188,7 @@ function Dashboard({
 
         {/* Poll Statistics */}
         <div className="stat-card">
-          {/* <div className="stat-icon">📋</div> */}
+          {/* <div className="stat-icon"></div> */}
           <div className="stat-content">
             <h3 className="stat-title">Polls</h3>
             <div className="stat-value">{stats.polls.total || 0}</div>
@@ -219,9 +254,9 @@ function Dashboard({
               <ul className="user-list">
                 {activeUsers.map(user => (
                   <li key={user._id} className="user-item">
-                    <div className="user-avatar">{user.avatar || user.username.substring(0, 2).toUpperCase()}</div>
+                    <div className="user-avatar">{user.avatar || (user.username || user.name || 'U').substring(0, 2).toUpperCase()}</div>
                     <div className="user-info">
-                      <div className="user-name">{user.username}</div>
+                      <div className="user-name">{user.username || user.name}</div>
                       <div className="user-status">
                         <span className="status-indicator active"></span>
                         {user.status}

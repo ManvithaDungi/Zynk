@@ -13,11 +13,12 @@ const connectDB = async () => {
 
     const conn = await mongoose.connect(mongoUri, {
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 30000,
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 30000,
+      serverSelectionTimeoutMS: 60000,
+      socketTimeoutMS: 60000,
+      connectTimeoutMS: 60000,
       // SSL/TLS configuration for MongoDB Atlas
       tls: true,
+      tlsAllowInvalidCertificates: true,
       authSource: 'admin',
       retryWrites: true,
       w: 'majority'
@@ -26,6 +27,9 @@ const connectDB = async () => {
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error(`❌ Database connection error: ${error.message}`);
+    console.error('💡 Make sure your IP address is whitelisted in MongoDB Atlas');
+    console.error('💡 Go to: https://cloud.mongodb.com/v2/[your-cluster-id]/security/network/whitelist');
+    console.error('💡 Add your current IP address or use 0.0.0.0/0 for all IPs (less secure)');
     process.exit(1);
   }
 };

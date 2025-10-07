@@ -5,15 +5,50 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { communicationAPI } from '../../utils/api';
 import './Chat.css';
 
-function Chat({ socket, currentUser, messages, users }) {
+function Chat({ socket, currentUser: propCurrentUser, messages: propMessages, users: propUsers }) {
+  const { user: authUser } = useAuth();
   const [messageInput, setMessageInput] = useState('');
   const [typingUsers, setTypingUsers] = useState([]);
   const [editingMessage, setEditingMessage] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [messages, setMessages] = useState(propMessages || []);
+  const [users, setUsers] = useState(propUsers || []);
+  const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+
+  // Use prop values or fallback to auth user
+  const currentUser = propCurrentUser || authUser;
+
+  /**
+   * Fetch messages and users when component mounts
+   */
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!propMessages && !propUsers) {
+        try {
+          setLoading(true);
+          const [messagesResponse, usersResponse] = await Promise.all([
+            communicationAPI.getMessages(),
+            communicationAPI.getUsers()
+          ]);
+          
+          setMessages(messagesResponse.data.messages || []);
+          setUsers(usersResponse.data.users || []);
+        } catch (error) {
+          console.error('Error fetching chat data:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchData();
+  }, [propMessages, propUsers]);
 
   /**
    * Auto-scroll to bottom when new messages arrive
@@ -57,9 +92,9 @@ function Chat({ socket, currentUser, messages, users }) {
    * Handle typing indicator
    */
   const handleTyping = () => {
-    if (socket) {
+    if (socket && currentUser) {
       socket.emit('message:typing', {
-        username: currentUser.username,
+        username: currentUser.username || currentUser.name,
         isTyping: true
       });
 
@@ -71,7 +106,7 @@ function Chat({ socket, currentUser, messages, users }) {
       // Set timeout to stop typing indicator
       typingTimeoutRef.current = setTimeout(() => {
         socket.emit('message:typing', {
-          username: currentUser.username,
+          username: currentUser.username || currentUser.name,
           isTyping: false
         });
       }, 2000);
@@ -81,38 +116,48 @@ function Chat({ socket, currentUser, messages, users }) {
   /**
    * Handle send message
    */
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
 
-    if (!messageInput.trim()) {
+    if (!messageInput.trim() || !currentUser) {
       return;
     }
 
-    if (editingMessage) {
-      // Edit existing message
-      socket.emit('message:edit', {
-        messageId: editingMessage._id,
-        content: messageInput.trim()
-      });
-      setEditingMessage(null);
-    } else {
-      // Send new message
-      socket.emit('message:send', {
-        sender: currentUser._id,
-        senderName: currentUser.username,
-        content: messageInput.trim(),
-        messageType: 'text'
-      });
-    }
+    try {
+      if (editingMessage) {
+        // Edit existing message
+        await communicationAPI.editMessage(editingMessage._id, {
+          content: messageInput.trim()
+        });
+        setEditingMessage(null);
+        
+        // Refresh messages
+        const response = await communicationAPI.getMessages();
+        setMessages(response.data.messages || []);
+      } else {
+        // Send new message
+        await communicationAPI.sendMessage({
+          content: messageInput.trim(),
+          messageType: 'text'
+        });
+        
+        // Refresh messages
+        const response = await communicationAPI.getMessages();
+        setMessages(response.data.messages || []);
+      }
 
-    setMessageInput('');
+      setMessageInput('');
 
-    // Stop typing indicator
-    if (socket) {
-      socket.emit('message:typing', {
-        username: currentUser.username,
-        isTyping: false
-      });
+      // Stop typing indicator
+      if (socket) {
+        socket.emit('message:typing', {
+          username: currentUser.username || currentUser.name,
+          isTyping: false
+        });
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Failed to send message. Please try again.');
     }
   };
 
@@ -135,18 +180,27 @@ function Chat({ socket, currentUser, messages, users }) {
   /**
    * Handle delete message
    */
-  const handleDeleteMessage = (messageId) => {
+  const handleDeleteMessage = async (messageId) => {
     if (window.confirm('Are you sure you want to delete this message?')) {
-      socket.emit('message:delete', { messageId });
+      try {
+        await communicationAPI.deleteMessage(messageId);
+        
+        // Refresh messages
+        const response = await communicationAPI.getMessages();
+        setMessages(response.data.messages || []);
+      } catch (error) {
+        console.error('Error deleting message:', error);
+        alert('Failed to delete message. Please try again.');
+      }
     }
   };
 
   /**
    * Filter messages based on search query
    */
-  const filteredMessages = messages.filter(msg =>
-    msg.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    msg.senderName.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredMessages = (messages || []).filter(msg =>
+    msg.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    msg.senderName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   /**
@@ -200,7 +254,7 @@ function Chat({ socket, currentUser, messages, users }) {
         <div className="chat-header-info">
           <h2>Chat Room</h2>
           <p className="chat-subtitle">
-            {users.filter(u => u.isActive).length} active users
+            {(users || []).filter(u => u.isActive).length} active users
           </p>
         </div>
         
@@ -218,9 +272,14 @@ function Chat({ socket, currentUser, messages, users }) {
 
       {/* Messages Area */}
       <div className="messages-area">
-        {Object.keys(groupedMessages).length === 0 ? (
+        {loading ? (
           <div className="empty-chat">
-            <div className="empty-chat-icon">💬</div>
+            <div className="empty-chat-icon"></div>
+            <p>Loading messages...</p>
+          </div>
+        ) : Object.keys(groupedMessages).length === 0 ? (
+          <div className="empty-chat">
+            <div className="empty-chat-icon"></div>
             <p>No messages yet. Start the conversation!</p>
           </div>
         ) : (
@@ -244,7 +303,7 @@ function Chat({ socket, currentUser, messages, users }) {
                     {/* Avatar for other users */}
                     {!isOwnMessage && (
                       <div className="message-avatar">
-                        {msg.sender?.avatar || msg.senderName.substring(0, 2).toUpperCase()}
+                        {msg.sender?.avatar || (msg.senderName || 'U').substring(0, 2).toUpperCase()}
                       </div>
                     )}
 
@@ -289,7 +348,7 @@ function Chat({ socket, currentUser, messages, users }) {
                     {/* Avatar for own messages */}
                     {isOwnMessage && (
                       <div className="message-avatar own-avatar">
-                        {currentUser.avatar || currentUser.username.substring(0, 2).toUpperCase()}
+                        {currentUser?.avatar || (currentUser?.username || currentUser?.name || 'U').substring(0, 2).toUpperCase()}
                       </div>
                     )}
                   </div>
@@ -302,7 +361,7 @@ function Chat({ socket, currentUser, messages, users }) {
         {/* Typing Indicator */}
         {typingUsers.length > 0 && (
           <div className="typing-indicator">
-            <div className="typing-avatar">✍️</div>
+            <div className="typing-avatar"></div>
             <div className="typing-text">
               {typingUsers.join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
             </div>
@@ -351,19 +410,19 @@ function Chat({ socket, currentUser, messages, users }) {
 
       {/* Online Users Sidebar */}
       <div className="chat-sidebar">
-        <h3 className="sidebar-title">Online Users ({users.filter(u => u.isActive).length})</h3>
+        <h3 className="sidebar-title">Online Users ({(users || []).filter(u => u.isActive).length})</h3>
         <ul className="online-users-list">
-          {users
+          {(users || [])
             .filter(u => u.isActive)
             .map(user => (
               <li key={user._id} className="online-user-item">
                 <div className="user-avatar-small">
-                  {user.avatar || user.username.substring(0, 2).toUpperCase()}
+                  {user.avatar || (user.username || user.name || 'U').substring(0, 2).toUpperCase()}
                 </div>
                 <div className="user-info-small">
                   <div className="user-name-small">
-                    {user.username}
-                    {user._id === currentUser._id && <span className="you-label"> (You)</span>}
+                    {user.username || user.name}
+                    {user._id === currentUser?._id && <span className="you-label"> (You)</span>}
                   </div>
                   <div className="user-status-small">
                     <span className="status-dot-small active"></span>
