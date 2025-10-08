@@ -1,20 +1,20 @@
 .analytics-page {
   min-height: 100vh;
-  background-color: #ffffff;
-  color: #000000;
+  background-color: var(--color-black);
+  color: var(--color-white);
 }
 
 .analytics-container {
-  max-width: 1400px;
+  max-width: var(--container-max-width);
   margin: 0 auto;
-  padding: 40px 24px;
+  padding: var(--spacing-2xl) var(--spacing-xl);
 }
 
 .analytics-header {
   text-align: center;
-  margin-bottom: 50px;
-  padding-bottom: 30px;
-  border-bottom: 2px solid #e0e0e0;
+  margin-bottom: var(--spacing-3xl);
+  padding-bottom: var(--spacing-xl);
+  border-bottom: 2px solid var(--color-gray);
   position: relative;
 }
 
@@ -26,43 +26,57 @@
   transform: translateX(-50%);
   width: 60px;
   height: 4px;
-  background: linear-gradient(90deg, #000000 0%, #666666 50%, #000000 100%);
+  background: linear-gradient(90deg, var(--color-white) 0%, var(--color-gray-lighter) 50%, var(--color-white) 100%);
   border-radius: 2px;
 }
 
 .analytics-header h1 {
-  font-size: 48px;
+  font-size: 3rem;
   font-weight: 700;
-  margin-bottom: 16px;
-  color: #000000;
+  margin-bottom: var(--spacing-md);
+  color: var(--color-white);
   letter-spacing: -0.02em;
+  position: relative;
+}
+
+.analytics-header h1::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-white), transparent);
 }
 
 .analytics-header p {
-  font-size: 18px;
-  color: #666666;
+  font-size: 1.125rem;
+  color: var(--color-gray-lighter);
   margin: 0;
   line-height: 1.6;
+  font-weight: 500;
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 24px;
-  margin-bottom: 50px;
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-3xl);
 }
 
 .stat-card {
-  background: #ffffff;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 30px;
+  background: linear-gradient(135deg, var(--color-gray-dark) 0%, var(--color-darker) 100%);
+  border: 2px solid var(--color-gray);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
   display: flex;
   align-items: center;
-  gap: 20px;
-  transition: all 0.3s ease;
+  gap: var(--spacing-lg);
+  transition: all var(--transition-slow);
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-md);
 }
 
 .stat-card::before {
@@ -71,76 +85,85 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #000000, #666666);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.3s ease;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  pointer-events: none;
 }
 
 .stat-card:hover {
-  border-color: #000000;
+  border-color: var(--color-white);
   transform: translateY(-4px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-lg);
 }
 
 .stat-card:hover::before {
-  transform: scaleX(1);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
 }
 
 .stat-icon {
-  font-size: 48px;
+  font-size: 3rem;
   line-height: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.stat-content {
+  position: relative;
+  z-index: 1;
 }
 
 .stat-content h3 {
-  font-size: 36px;
+  font-size: 2.25rem;
   font-weight: 700;
-  margin: 0 0 8px 0;
-  color: #000000;
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--color-white);
+  letter-spacing: -0.01em;
 }
 
 .stat-content p {
-  font-size: 14px;
-  color: #666666;
+  font-size: 0.875rem;
+  color: var(--color-gray-lighter);
   margin: 0;
   font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .modules-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 24px;
+  gap: var(--spacing-xl);
 }
 
 .module-card {
-  background: #ffffff;
-  border: 2px solid #e0e0e0;
-  border-radius: 16px;
-  padding: 35px;
+  background: linear-gradient(135deg, var(--color-gray-dark) 0%, var(--color-darker) 100%);
+  border: 2px solid var(--color-gray);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-2xl);
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: var(--spacing-xl);
   text-decoration: none;
   color: inherit;
-  transition: all 0.3s ease;
+  transition: all var(--transition-slow);
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-md);
 }
 
 .module-card::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, transparent 0%, rgba(0, 0, 0, 0.03) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--transition-slow);
 }
 
 .module-card:hover {
-  border-color: #000000;
+  border-color: var(--color-white);
   transform: translateY(-6px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-lg);
 }
 
 .module-card:hover::before {
@@ -149,11 +172,11 @@
 
 .module-card:hover .module-arrow {
   transform: translateX(8px);
-  color: #000000;
+  color: var(--color-white);
 }
 
 .module-icon {
-  font-size: 56px;
+  font-size: 3.5rem;
   line-height: 1;
   flex-shrink: 0;
   position: relative;
@@ -167,24 +190,25 @@
 }
 
 .module-content h3 {
-  font-size: 22px;
+  font-size: 1.375rem;
   font-weight: 700;
-  margin: 0 0 12px 0;
-  color: #000000;
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--color-white);
   letter-spacing: -0.01em;
 }
 
 .module-content p {
-  font-size: 15px;
-  color: #666666;
+  font-size: 0.9375rem;
+  color: var(--color-gray-lighter);
   margin: 0;
   line-height: 1.5;
+  font-weight: 500;
 }
 
 .module-arrow {
-  font-size: 32px;
-  color: #cccccc;
-  transition: all 0.3s ease;
+  font-size: 2rem;
+  color: var(--color-gray);
+  transition: all var(--transition-slow);
   flex-shrink: 0;
   position: relative;
   z-index: 1;
@@ -192,76 +216,104 @@
 
 @media (max-width: 768px) {
   .analytics-container {
-    padding: 24px 16px;
+    padding: var(--spacing-xl) var(--spacing-md);
   }
 
   .analytics-header {
-    margin-bottom: 40px;
-    padding-bottom: 24px;
+    margin-bottom: var(--spacing-2xl);
+    padding-bottom: var(--spacing-xl);
   }
 
   .analytics-header h1 {
-    font-size: 36px;
+    font-size: 2.25rem;
   }
 
   .analytics-header p {
-    font-size: 16px;
+    font-size: 1rem;
   }
 
   .stats-grid {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 16px;
-    margin-bottom: 40px;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-2xl);
   }
 
   .stat-card {
     flex-direction: column;
     text-align: center;
-    padding: 24px;
-    gap: 12px;
+    padding: var(--spacing-xl);
+    gap: var(--spacing-sm);
   }
 
   .stat-icon {
-    font-size: 40px;
+    font-size: 2.5rem;
   }
 
   .stat-content h3 {
-    font-size: 28px;
+    font-size: 1.75rem;
   }
 
   .modules-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: var(--spacing-md);
   }
 
   .module-card {
-    padding: 24px;
-    gap: 16px;
+    padding: var(--spacing-xl);
+    gap: var(--spacing-md);
   }
 
   .module-icon {
-    font-size: 40px;
+    font-size: 2.5rem;
   }
 
   .module-content h3 {
-    font-size: 18px;
+    font-size: 1.125rem;
   }
 
   .module-content p {
-    font-size: 14px;
+    font-size: 0.875rem;
   }
 }
 
 @media (max-width: 480px) {
   .analytics-header h1 {
-    font-size: 28px;
+    font-size: 1.75rem;
   }
 
   .analytics-header p {
-    font-size: 14px;
+    font-size: 0.875rem;
   }
 
   .stats-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Focus Styles for Accessibility */
+.module-card:focus-visible {
+  outline: 3px solid var(--color-white);
+  outline-offset: 2px;
+  box-shadow: var(--focus-ring);
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .stat-card,
+  .module-card {
+    border-width: 3px;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .stat-card,
+  .module-card {
+    transition: none;
+  }
+  
+  .stat-card::before,
+  .module-card::before {
+    display: none;
   }
 }
