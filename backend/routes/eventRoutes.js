@@ -3,6 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const Event = require('../models/Event');
 const User = require('../models/User');
+const Category = require('../models/Category');
 const { authenticateToken } = require('../utils/jwtAuth');
 const { isValidObjectId, sanitizeString, isValidTime } = require('../utils/validation');
 
@@ -171,23 +172,51 @@ router.post('/create', authenticateToken, upload.single('eventImage'), async (re
       });
     }
 
+    // Handle category - find or create category
+    let categoryId;
+    if (category) {
+      // Try to find existing category by name
+      let existingCategory = await Category.findOne({ name: category });
+      if (!existingCategory) {
+        // Create new category if it doesn't exist
+        existingCategory = await Category.create({ 
+          name: category, 
+          description: `${category} events` 
+        });
+      }
+      categoryId = existingCategory._id;
+    } else {
+      // Default category
+      let defaultCategory = await Category.findOne({ name: 'Other' });
+      if (!defaultCategory) {
+        defaultCategory = await Category.create({ 
+          name: 'Other', 
+          description: 'General events' 
+        });
+      }
+      categoryId = defaultCategory._id;
+    }
+
     const eventData = {
       title: sanitizeString(title),
       description: sanitizeString(description),
       date: eventDate,
       time: sanitizeString(time),
       location: sanitizeString(location),
-      category: category || 'Other',
+      category: categoryId,
       maxAttendees: parseInt(maxAttendees) || 100,
       organizer: req.user.userId
     };
 
-    // Add thumbnail if uploaded
+    // Add thumbnail if uploaded or provided in request body
     if (req.file) {
       eventData.thumbnail = {
         url: `/uploads/events/${req.file.filename}`,
         publicId: req.file.filename
       };
+    } else if (req.body.thumbnail) {
+      // Handle thumbnail URL from request body (for seeding)
+      eventData.thumbnail = req.body.thumbnail;
     }
 
     const event = new Event(eventData);
@@ -232,6 +261,11 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
+    }
+
+    // Check if organizer exists
+    if (!event.organizer) {
+      return res.status(500).json({ message: 'Event organizer not found' });
     }
 
     const isRegistered = event.registeredUsers.some(user => user._id.toString() === req.user.userId);

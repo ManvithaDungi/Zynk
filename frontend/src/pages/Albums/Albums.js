@@ -106,12 +106,12 @@ const Albums = () => {
         <div key={memory.id} className="memory-card">
           <div className="memory-media">
             <img 
-              src={memory.mediaUrl || "/placeholder.jpg"} 
+              src={memory.mediaUrl || "/images/memories/mem4.jpg"} 
               alt={memory.title || "Memory"}
               className="memory-image"
               loading="lazy"
               onError={(e) => {
-                e.target.src = "/placeholder.jpg";
+                e.target.src = "/images/memories/mem3.jpg";
               }}
             />
           </div>

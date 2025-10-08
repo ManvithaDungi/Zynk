@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../../components/Navbar/Navbar";
 import { useAuth } from "../../context/AuthContext";
-import { postsAPI, eventsAPI } from "../../utils/api";
+import { postsAPI, eventsAPI, memoriesAPI } from "../../utils/api";
 import "./PrivacyManager.css";
 
 const PrivacyManager = () => {
@@ -43,7 +43,7 @@ const PrivacyManager = () => {
     fetchAllData();
   }, [fetchAllData]);
 
-  // Fetch memories (posts and events)
+  // Fetch memories (posts, events, and memories)
   const fetchMemories = async () => {
     try {
       // Fetch posts
@@ -54,35 +54,116 @@ const PrivacyManager = () => {
       const eventsResponse = await eventsAPI.getUpcoming();
       const events = eventsResponse.data.events || [];
       
-      // Combine and format data
+      // Fetch memories
+      const memoriesResponse = await memoriesAPI.getAll();
+      const userMemories = memoriesResponse.data.memories || [];
+      
+      // Combine and format data, filtering to only show user's own content
       const combinedMemories = [
-        ...posts.map(post => ({
-          _id: post._id,
-          title: post.caption || "Untitled Post",
-          description: post.caption || "",
-          author: post.user?.name || "Unknown",
-          category: "Post",
-          tags: [],
-          imageUrl: post.media?.[0]?.url || "/placeholder.jpg",
-          createdAt: post.createdAt,
-          type: "post",
-          visibility: post.visibility || "public",
-          settings: post.settings || { allowDownload: true, allowSharing: true, allowComments: true }
-        })),
-        ...events.map(event => ({
-          _id: event._id,
-          title: event.title,
-          description: event.description,
-          author: event.organizer?.name || "Unknown",
-          category: event.category || "Event",
-          tags: event.tags || [],
-          imageUrl: event.thumbnail?.url || event.eventImage || "/placeholder.jpg",
-          createdAt: event.createdAt,
-          type: "event",
-          visibility: event.visibility || "public",
-          settings: event.settings || { allowDownload: true, allowSharing: true, allowComments: true }
-        }))
+        ...posts
+          .filter(post => {
+            // ULTRA STRICT FILTERING: Only show posts that the user can actually edit
+            if (!user || !post.user) return false;
+            
+            // Get the user ID from the JWT token (most reliable)
+            const userId = user.id || user._id;
+            if (!userId) return false;
+            
+            // Get the post user ID
+            const postUserId = post.user._id || post.user.id;
+            if (!postUserId) return false;
+            
+            // Only show if IDs match exactly
+            return postUserId.toString() === userId.toString();
+          })
+          .map(post => ({
+            _id: post.id || post._id, // Use id field if available, fallback to _id
+            id: post.id || post._id,  // Also store as id for consistency
+            title: post.caption || "Untitled Post",
+            description: post.caption || "",
+            author: post.user?.name || "Unknown",
+            createdBy: post.createdBy,
+            category: "Post",
+            tags: [],
+            imageUrl: post.media?.[0]?.url || "/images/posts/grand-opening-ceremony.png",
+            createdAt: post.createdAt,
+            type: "post",
+            visibility: post.visibility || "public",
+            settings: post.settings || { allowDownload: true, allowSharing: true, allowComments: true }
+          })),
+        ...events
+          .filter(event => {
+            // ULTRA STRICT FILTERING: Only show events that the user can actually edit
+            if (!user || !event.organizer) return false;
+            
+            // Get the user ID from the JWT token (most reliable)
+            const userId = user.id || user._id;
+            if (!userId) return false;
+            
+            // Get the event organizer ID
+            const eventOrganizerId = event.organizer._id || event.organizer.id;
+            if (!eventOrganizerId) return false;
+            
+            // Only show if IDs match exactly
+            return eventOrganizerId.toString() === userId.toString();
+          })
+          .map(event => ({
+            _id: event.id || event._id, // Use id field if available, fallback to _id
+            id: event.id || event._id,  // Also store as id for consistency
+            title: event.title,
+            description: event.description,
+            author: event.organizer?.name || "Unknown",
+            createdBy: event.organizer?._id,
+            category: event.category || "Event",
+            tags: event.tags || [],
+            imageUrl: event.thumbnail?.url || event.eventImage || "/images/events/event1.jpg",
+            createdAt: event.createdAt,
+            type: "event",
+            visibility: event.visibility || "public",
+            settings: event.settings || { allowDownload: true, allowSharing: true, allowComments: true }
+          })),
+        ...userMemories
+          .filter(memory => {
+            // ULTRA STRICT FILTERING: Only show memories that the user can actually edit
+            if (!user || !memory.createdBy) return false;
+            
+            // Get the user ID from the JWT token (most reliable)
+            const userId = user.id || user._id;
+            if (!userId) return false;
+            
+            // Get the memory creator ID
+            const memoryCreatorId = memory.createdBy._id || memory.createdBy.id;
+            if (!memoryCreatorId) return false;
+            
+            // Only show if IDs match exactly
+            return memoryCreatorId.toString() === userId.toString();
+          })
+          .map(memory => ({
+            _id: memory.id || memory._id, // Use id field if available, fallback to _id
+            id: memory.id || memory._id,  // Also store as id for consistency
+            title: memory.title || "Untitled Memory",
+            description: memory.description || "",
+            author: memory.createdBy?.name || "Unknown",
+            createdBy: memory.createdBy?._id,
+            category: "Memory",
+            tags: memory.tags || [],
+            imageUrl: memory.mediaUrl || "/images/memories/mem1.jpg",
+            createdAt: memory.createdAt,
+            type: "memory",
+            visibility: memory.visibility || "public", // Default to public if not set
+            settings: memory.settings || { allowDownload: true, allowSharing: true, allowComments: true } // Default settings
+          }))
       ];
+      
+      console.log(`PrivacyManager: Filtered to ${combinedMemories.length} editable items (${posts.length} posts, ${events.length} events, ${userMemories.length} memories total)`);
+      console.log(`PrivacyManager: User ID: ${user?.id || user?._id}, User Name: ${user?.name}`);
+      
+      // SAFETY CHECK: If we can't determine ownership clearly, show empty list
+      if (combinedMemories.length === 0) {
+        console.log('PrivacyManager: No editable content found - showing empty list');
+      } else {
+        console.log('PrivacyManager: Showing only content with exact ID matches');
+      }
       
       setMemories(combinedMemories);
     } catch (error) {
@@ -170,33 +251,108 @@ const PrivacyManager = () => {
     setError("");
 
     try {
-      const updatePromises = selectedMemories.map(async (memoryId) => {
-        const memory = memories.find(m => m._id === memoryId);
-        if (!memory) return;
+      const updatePromises = selectedMemories
+        .filter(memoryId => memoryId && memoryId !== undefined) // Filter out undefined IDs
+        .map(async (memoryId) => {
+          const memory = memories.find(m => (m._id === memoryId) || (m.id === memoryId));
+          if (!memory) return { success: false, error: 'Memory not found' };
 
-        const updateData = {
-          visibility: privacySettings.visibility,
-          settings: {
-            allowDownload: privacySettings.downloadable,
-            allowSharing: privacySettings.shareable,
-            allowComments: privacySettings.allowComments || true,
+          // Check if user can modify this memory (same logic as filtering)
+          const userId = user?.id || user?._id;
+          let canModify = false;
+          
+          if (memory.type === "post") {
+            const postUserId = memory.createdBy;
+            canModify = postUserId && userId && postUserId.toString() === userId.toString();
+          } else if (memory.type === "event") {
+            const eventOrganizerId = memory.createdBy;
+            canModify = eventOrganizerId && userId && eventOrganizerId.toString() === userId.toString();
+          } else if (memory.type === "memory") {
+            const memoryCreatorId = memory.createdBy;
+            canModify = memoryCreatorId && userId && memoryCreatorId.toString() === userId.toString();
           }
-        };
+          
+          if (!canModify) {
+            return { 
+              success: false, 
+              error: `You can only modify your own ${memory.type}s. This ${memory.type} was created by ${memory.author}.`,
+              memoryTitle: memory.title
+            };
+          }
 
-        // Update based on memory type
-        if (memory.type === "post") {
-          return postsAPI.update(memoryId, updateData);
-        } else if (memory.type === "event") {
-          return eventsAPI.update(memoryId, updateData);
-        }
-      });
+          const updateData = {
+            visibility: privacySettings.visibility,
+            settings: {
+              allowDownload: privacySettings.downloadable,
+              allowSharing: privacySettings.shareable,
+              allowComments: privacySettings.allowComments || true,
+            }
+          };
 
-      await Promise.all(updatePromises);
+          try {
+            // Update based on memory type
+            if (memory.type === "post") {
+              await postsAPI.update(memoryId, updateData);
+            } else if (memory.type === "event") {
+              await eventsAPI.update(memoryId, updateData);
+            } else if (memory.type === "memory") {
+              await memoriesAPI.update(memoryId, updateData);
+            }
+            return { success: true, memoryTitle: memory.title };
+          } catch (error) {
+            return { 
+              success: false, 
+              error: error.response?.data?.message || 'Update failed',
+              memoryTitle: memory.title
+            };
+          }
+        });
+
+      const results = await Promise.all(updatePromises);
       
-      // Refresh memories
+      // Process results
+      const successful = results.filter(r => r.success);
+      const failed = results.filter(r => !r.success);
+      
+      if (failed.length > 0) {
+        const errorMessages = failed.map(f => `${f.memoryTitle}: ${f.error}`).join('\n');
+        setError(`Some updates failed:\n${errorMessages}`);
+      }
+      
+      if (successful.length > 0) {
+        console.log(`Successfully updated ${successful.length} memories:`, successful.map(s => s.memoryTitle));
+        // Show success message
+        setError(`Successfully updated ${successful.length} memories!`);
+        setTimeout(() => setError(""), 3000); // Clear success message after 3 seconds
+        
+        // Update local state immediately with new visibility
+        setMemories(prevMemories => 
+          prevMemories.map(memory => {
+            const isUpdated = selectedMemories.includes(memory._id);
+            if (isUpdated) {
+              return {
+                ...memory,
+                visibility: privacySettings.visibility,
+                settings: {
+                  allowDownload: privacySettings.downloadable,
+                  allowSharing: privacySettings.shareable,
+                  allowComments: privacySettings.allowComments || true,
+                }
+              };
+            }
+            return memory;
+          })
+        );
+      }
+      
+      // Refresh memories to ensure we have the latest data
       await fetchMemories();
       setSelectedMemories([]);
-      setError("");
+      
+      // Only clear error if there were no failures
+      if (failed.length === 0) {
+        setError("");
+      }
       
       // Show success message (you could add a toast notification here)
       console.log("Privacy settings updated successfully!");
@@ -303,7 +459,7 @@ const PrivacyManager = () => {
                         alt={memory.title}
                         className="memory-image"
                         onError={(e) => {
-                          e.target.src = "/placeholder.jpg";
+                          e.target.src = "/images/memories/mem1.jpg";
                         }}
                       />
                       <div className="memory-info">

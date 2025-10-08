@@ -1051,6 +1051,14 @@
   max-width: 900px;
 }
 
+.report-issue-modal {
+  max-width: 1000px;
+}
+
+.contact-us-modal {
+  max-width: 1000px;
+}
+
 /* Responsive Modal */
 @media (max-width: 768px) {
   .action-buttons-grid {

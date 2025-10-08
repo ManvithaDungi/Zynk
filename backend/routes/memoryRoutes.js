@@ -28,7 +28,8 @@ router.get("/", authenticateToken, async (req, res) => {
 
     res.json({
       memories: memories.map(memory => ({
-        id: memory._id,
+        _id: memory._id,
+        id: memory._id, // Also include id for consistency
         title: memory.title,
         description: memory.description,
         mediaUrl: memory.mediaUrl,
@@ -38,6 +39,8 @@ router.get("/", authenticateToken, async (req, res) => {
         event: memory.event,
         likesCount: memory.likesCount,
         commentsCount: memory.commentsCount,
+        visibility: memory.visibility,
+        settings: memory.settings,
         isLikedByUser: memory.likes.some(like => like.user.toString() === req.user.userId),
         createdAt: memory.createdAt
       })),
@@ -193,20 +196,24 @@ router.post("/", authenticateToken, async (req, res) => {
     }
 
     // Check if album exists and user has access
-    const album = await Album.findById(albumId).populate("event")
+    const album = await Album.findById(albumId).populate("eventId")
     if (!album) {
       return res.status(404).json({ message: "Album not found" })
     }
 
-    const event = album.event
-    const isHost = (event.organizer?.toString?.() || event.host?.toString?.()) === req.user.userId
-    const isRegistered = (event.attendees || event.registeredUsers || []).some((reg) => {
-      const regId = reg.user ? reg.user.toString() : reg.toString()
-      return regId === req.user.userId
-    })
+    const event = album.eventId
+    
+    // If album has an event, check permissions
+    if (event) {
+      const isHost = (event.organizer?.toString?.() || event.host?.toString?.()) === req.user.userId
+      const isRegistered = (event.attendees || event.registeredUsers || []).some((reg) => {
+        const regId = reg.user ? reg.user.toString() : reg.toString()
+        return regId === req.user.userId
+      })
 
-    if (!isHost && !isRegistered) {
-      return res.status(403).json({ message: "Access denied. You must be registered for this event." })
+      if (!isHost && !isRegistered) {
+        return res.status(403).json({ message: "Access denied. You must be registered for this event." })
+      }
     }
 
     const memory = new Memory({
@@ -215,7 +222,7 @@ router.post("/", authenticateToken, async (req, res) => {
       mediaUrl: sanitizeInput(mediaUrl),
       mediaType: mediaType,
       album: albumId,
-      event: event._id,
+      event: event ? event._id : null,
       createdBy: req.user.userId,
     })
 
@@ -376,7 +383,7 @@ router.delete("/:id", authenticateToken, async (req, res) => {
 // Update memory
 router.put("/:id", authenticateToken, async (req, res) => {
   try {
-    const { title, description } = req.body
+    const { title, description, visibility, settings } = req.body
 
     const memory = await Memory.findById(req.params.id)
     if (!memory) {
@@ -388,12 +395,17 @@ router.put("/:id", authenticateToken, async (req, res) => {
       return res.status(403).json({ message: "Access denied. You can only edit your own memories." })
     }
 
+    const updateData = {}
+    
+    // Update basic fields if provided
+    if (title !== undefined) updateData.title = sanitizeInput(title)
+    if (description !== undefined) updateData.description = sanitizeInput(description)
+    if (visibility !== undefined) updateData.visibility = visibility
+    if (settings !== undefined) updateData.settings = settings
+
     const updatedMemory = await Memory.findByIdAndUpdate(
       req.params.id,
-      {
-        title: sanitizeInput(title) || memory.title,
-        description: sanitizeInput(description) || memory.description,
-      },
+      updateData,
       { new: true },
     ).populate("createdBy", "name email")
 
@@ -408,6 +420,8 @@ router.put("/:id", authenticateToken, async (req, res) => {
         createdBy: updatedMemory.createdBy,
         likesCount: updatedMemory.likesCount,
         commentsCount: updatedMemory.commentsCount,
+        visibility: updatedMemory.visibility,
+        settings: updatedMemory.settings,
         createdAt: updatedMemory.createdAt,
       },
     })

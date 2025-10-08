@@ -11,6 +11,8 @@ import EventPoll from "../../components/EventPoll/EventPoll";
 import EventWaitlist from "../../components/EventWaitlist/EventWaitlist";
 import EventShare from "../../components/EventShare/EventShare";
 import EventFeedback from "../../components/EventFeedback/EventFeedback";
+import ReportIssue from "../../components/ReportIssue/ReportIssue";
+import ContactUs from "../../components/ContactUs/ContactUs";
 import { useAuth } from "../../context/AuthContext";
 
 const EventDetail = () => {
@@ -36,6 +38,8 @@ const EventDetail = () => {
   const [showPollsModal, setShowPollsModal] = useState(false);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [showReportIssueModal, setShowReportIssueModal] = useState(false);
+  const [showContactUsModal, setShowContactUsModal] = useState(false);
   const [feedbackPrefill, setFeedbackPrefill] = useState({});
 
   // Fetch event details
@@ -302,14 +306,7 @@ const EventDetail = () => {
                 {/* Report Issue Button */}
                 <button
                   className="action-btn report-btn"
-                  onClick={() => {
-                    setFeedbackPrefill({
-                      category: "bug-report",
-                      subject: `Bug Report: ${event?.title || 'Event'}`,
-                      message: `I encountered an issue with this event:\n\n`
-                    });
-                    setShowFeedbackModal(true);
-                  }}
+                  onClick={() => setShowReportIssueModal(true)}
                   title="Report an issue with this event"
                 >
                   <div className="action-icon">🚨</div>
@@ -322,14 +319,7 @@ const EventDetail = () => {
                 {/* Contact Organizer Button */}
                 <button
                   className="action-btn contact-btn"
-                  onClick={() => {
-                    setFeedbackPrefill({
-                      category: "event-feedback",
-                      subject: `Question about: ${event?.title || 'Event'}`,
-                      message: `Hi, I have a question about this event:\n\n`
-                    });
-                    setShowFeedbackModal(true);
-                  }}
+                  onClick={() => setShowContactUsModal(true)}
                   title="Contact the event organizer"
                 >
                   <div className="action-icon">📧</div>
@@ -635,6 +625,55 @@ const EventDetail = () => {
                   prefillCategory={feedbackPrefill.category}
                   prefillSubject={feedbackPrefill.subject}
                   prefillMessage={feedbackPrefill.message}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Report Issue Modal */}
+        {showReportIssueModal && (
+          <div className="modal-overlay" onClick={() => setShowReportIssueModal(false)}>
+            <div className="modal report-issue-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Report an Issue</h3>
+                <button 
+                  className="close-btn" 
+                  onClick={() => setShowReportIssueModal(false)}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="modal-content">
+                <ReportIssue 
+                  eventId={event?.id}
+                  eventTitle={event?.title}
+                  isModal={true}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Contact Us Modal */}
+        {showContactUsModal && (
+          <div className="modal-overlay" onClick={() => setShowContactUsModal(false)}>
+            <div className="modal contact-us-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Contact Organizer</h3>
+                <button 
+                  className="close-btn" 
+                  onClick={() => setShowContactUsModal(false)}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="modal-content">
+                <ContactUs 
+                  eventId={event?.id}
+                  eventTitle={event?.title}
+                  organizerName={event?.organizer?.name}
+                  isModal={true}
                 />
               </div>
             </div>

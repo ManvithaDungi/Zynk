@@ -30,7 +30,7 @@ const memorySchema = new mongoose.Schema(
     event: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Event",
-      required: true,
+      required: false,
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -73,6 +73,25 @@ const memorySchema = new mongoose.Schema(
     commentsCount: {
       type: Number,
       default: 0,
+    },
+    visibility: {
+      type: String,
+      enum: ["public", "private", "friends"],
+      default: "public",
+    },
+    settings: {
+      allowDownload: {
+        type: Boolean,
+        default: true,
+      },
+      allowSharing: {
+        type: Boolean,
+        default: true,
+      },
+      allowComments: {
+        type: Boolean,
+        default: true,
+      },
     },
   },
   {

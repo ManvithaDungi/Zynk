@@ -152,10 +152,10 @@ const Memories = () => {
               <div key={memory.id} className="memory-card">
                 <div className="memory-image">
                   <img 
-                    src={memory.mediaUrl || "/placeholder.jpg"} 
+                    src={memory.mediaUrl || "/images/memories/mem1.jpg"} 
                     alt={memory.title || "Memory"} 
                     onError={(e) => {
-                      e.target.src = "/placeholder.jpg";
+                      e.target.src = "/images/memories/mem1.jpg";
                     }}
                   />
                 </div>

@@ -121,7 +121,7 @@ const EventFeedback = ({ eventId, eventTitle, isModal = false, prefillCategory =
       };
 
       try {
-        await axios.post("/api/event-feedback", submitData);
+        await axios.post("/api/feedback", submitData);
         setSuccessMessage("Thank you for your feedback! We'll review it and get back to you if needed.");
       } catch (apiError) {
         // If API endpoint doesn't exist, simulate success for demo purposes

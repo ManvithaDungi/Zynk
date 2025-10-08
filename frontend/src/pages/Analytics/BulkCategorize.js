@@ -25,7 +25,7 @@ const BulkCategorize = () => {
           title: "Event Opening",
           description: "The grand opening of our annual conference",
           author: "John Doe",
-          imageUrl: "https://via.placeholder.com/300x200",
+          imageUrl: "/images/memories/mem1.jpg",
           category: "highlights",
           tags: ["fun", "memorable"],
           createdAt: new Date().toISOString()
@@ -35,7 +35,7 @@ const BulkCategorize = () => {
           title: "Group Photo",
           description: "Team photo with all attendees",
           author: "Jane Smith",
-          imageUrl: "https://via.placeholder.com/300x200",
+          imageUrl: "/images/memories/mem1.jpg",
           category: "group",
           tags: ["beautiful"],
           createdAt: new Date().toISOString()

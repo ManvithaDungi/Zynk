@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from "react";
-import { postsAPI } from "../../utils/api";
+import { memoriesAPI } from "../../utils/api";
 import "./EnhancedMemoryForm.css";
 
 const EnhancedMemoryForm = ({ albumId, onClose, onSuccess }) => {
@@ -295,7 +295,7 @@ const EnhancedMemoryForm = ({ albumId, onClose, onSuccess }) => {
     try {
       const submitData = new FormData();
       
-      // Add form data
+      // Add form data with proper field mapping
       Object.keys(formData).forEach(key => {
         if (key === 'tags') {
           formData.tags.forEach(tag => submitData.append('tags[]', tag));
@@ -304,21 +304,37 @@ const EnhancedMemoryForm = ({ albumId, onClose, onSuccess }) => {
             submitData.append(`customFields.${field}`, formData.customFields[field]);
           });
         } else if (formData[key] !== null && formData[key] !== undefined) {
-          submitData.append(key, formData[key]);
+          // Map caption to title for backend compatibility
+          if (key === 'caption') {
+            submitData.append('title', formData[key]);
+          } else {
+            submitData.append(key, formData[key]);
+          }
         }
       });
       
-      // Add media files
-      mediaFiles.forEach((file, index) => {
-        submitData.append('media', file);
-      });
+      // Handle media - for now, we'll use the first media file URL if available
+      // TODO: Implement proper file upload to get URLs
+      if (mediaFiles.length > 0) {
+        // For now, create a placeholder URL - in a real app, you'd upload the file first
+        const firstFile = mediaFiles[0];
+        const mediaType = firstFile.type.startsWith('video/') ? 'video' : 'image';
+        const mediaUrl = URL.createObjectURL(firstFile); // Temporary URL for demo
+        
+        submitData.append('mediaUrl', mediaUrl);
+        submitData.append('mediaType', mediaType);
+      } else {
+        // If no files, use default values
+        submitData.append('mediaUrl', '/images/memories/mem1.jpg');
+        submitData.append('mediaType', 'image');
+      }
       
       // Add album ID only if provided (for standalone memories, don't send albumId)
       if (albumId) {
         submitData.append('albumId', albumId);
       }
       
-      const response = await postsAPI.create(submitData);
+      const response = await memoriesAPI.create(submitData);
       
       if (onSuccess) {
         onSuccess(response.data);
