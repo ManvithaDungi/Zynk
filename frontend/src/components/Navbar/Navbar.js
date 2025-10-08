@@ -73,6 +73,14 @@ const Navbar = () => {
           >
             Create Event
           </Link>
+
+          <Link 
+            to="/feedback" 
+            className={`navbar-link feedback-link ${isActive("/feedback") ? "active" : ""}`}
+            title="Send website feedback"
+          >
+            📝 Feedback
+          </Link>
         </div>
 
         <div className="navbar-user">

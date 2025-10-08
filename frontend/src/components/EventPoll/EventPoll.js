@@ -3,11 +3,14 @@ import { pollsAPI } from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import './EventPoll.css';
 
-const EventPoll = ({ eventId, canCreatePoll = false }) => {
+const EventPoll = ({ eventId, canCreatePoll = false, isModal = false }) => {
   const [polls, setPolls] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [activePoll, setActivePoll] = useState(null);
+  const [voteCount, setVoteCount] = useState(0);
+  const [showResults, setShowResults] = useState({});
   const { user } = useAuth();
 
   // Create poll form state
@@ -35,20 +38,25 @@ const EventPoll = ({ eventId, canCreatePoll = false }) => {
     fetchPolls();
   }, [fetchPolls]);
 
-  // Handle poll vote
-  const handleVote = async (pollId, optionIndex) => {
+  // Enhanced poll vote handling with better feedback
+  const handleVote = useCallback(async (pollId, optionIndex) => {
     try {
+      setActivePoll(pollId);
       await pollsAPI.vote(pollId, { optionIndex });
+      setVoteCount(prev => prev + 1);
+      setShowResults(prev => ({ ...prev, [pollId]: true }));
       // Refresh polls to show updated results
       await fetchPolls();
     } catch (error) {
       console.error('Error voting on poll:', error);
-      alert('Failed to vote on poll');
+      alert('Failed to vote on poll. Please try again.');
+    } finally {
+      setActivePoll(null);
     }
-  };
+  }, [fetchPolls]);
 
-  // Handle create poll
-  const handleCreatePoll = async (e) => {
+  // Enhanced create poll functionality
+  const handleCreatePoll = useCallback(async (e) => {
     e.preventDefault();
     if (!pollForm.question.trim() || pollForm.options.filter(opt => opt.trim()).length < 2) {
       alert('Please provide a question and at least 2 options');
@@ -74,13 +82,16 @@ const EventPoll = ({ eventId, canCreatePoll = false }) => {
       });
       setShowCreateForm(false);
       await fetchPolls();
+      
+      // Show success feedback
+      alert('Poll created successfully! 🎉');
     } catch (error) {
       console.error('Error creating poll:', error);
-      alert('Failed to create poll');
+      alert('Failed to create poll. Please try again.');
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [pollForm, eventId, fetchPolls]);
 
   // Add option to poll form
   const addOption = () => {

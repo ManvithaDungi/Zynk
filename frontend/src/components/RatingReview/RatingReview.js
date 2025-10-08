@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { reviewsAPI } from '../../utils/api';
 import './RatingReview.css';
 
-const RatingReview = ({ eventId, canReview = false }) => {
+const RatingReview = ({ eventId, canReview = false, isModal = false }) => {
   const [reviews, setReviews] = useState([]);
   const [averageRating, setAverageRating] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
@@ -12,6 +12,8 @@ const RatingReview = ({ eventId, canReview = false }) => {
   const [sortBy, setSortBy] = useState('newest');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [hoveredRating, setHoveredRating] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
 
   // Review form state
   const [rating, setRating] = useState(0);
@@ -81,9 +83,13 @@ const RatingReview = ({ eventId, canReview = false }) => {
       setShowReviewForm(false);
       setRating(0);
       setReviewText('');
+      setReviewCount(prev => prev + 1);
+      
+      // Show success feedback
+      alert('Review submitted successfully! 🎉');
     } catch (error) {
       console.error('Error submitting review:', error);
-      alert('Failed to submit review');
+      alert('Failed to submit review. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -100,15 +106,17 @@ const RatingReview = ({ eventId, canReview = false }) => {
     }
   };
 
-  // Star rating component
-  const StarRating = ({ rating, onRatingChange, readonly = false }) => (
+  // Enhanced Star rating component with hover effects
+  const StarRating = ({ rating, onRatingChange, readonly = false, interactive = false }) => (
     <div className="star-rating">
       {[1, 2, 3, 4, 5].map(star => (
         <button
           key={star}
           type="button"
-          className={`star ${star <= rating ? 'filled' : ''}`}
+          className={`star ${star <= (interactive ? hoveredRating || rating : rating) ? 'filled' : ''} ${interactive ? 'interactive' : ''}`}
           onClick={() => !readonly && onRatingChange(star)}
+          onMouseEnter={() => interactive && setHoveredRating(star)}
+          onMouseLeave={() => interactive && setHoveredRating(0)}
           disabled={readonly}
         >
           ★
@@ -176,6 +184,9 @@ const RatingReview = ({ eventId, canReview = false }) => {
             <span className="rating-number">{averageRating.toFixed(1)}</span>
             <StarRating rating={Math.round(averageRating)} readonly={true} />
             <span className="rating-count">({totalReviews} reviews)</span>
+            {reviewCount > 0 && (
+              <span className="session-reviews">📝 {reviewCount} review{reviewCount !== 1 ? 's' : ''} this session</span>
+            )}
           </div>
         </div>
 

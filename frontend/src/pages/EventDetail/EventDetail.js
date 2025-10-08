@@ -10,6 +10,7 @@ import EventChat from "../../components/EventChat/EventChat";
 import EventPoll from "../../components/EventPoll/EventPoll";
 import EventWaitlist from "../../components/EventWaitlist/EventWaitlist";
 import EventShare from "../../components/EventShare/EventShare";
+import EventFeedback from "../../components/EventFeedback/EventFeedback";
 import { useAuth } from "../../context/AuthContext";
 
 const EventDetail = () => {
@@ -31,6 +32,11 @@ const EventDetail = () => {
   // New state for enhanced features
   const [activeTab, setActiveTab] = useState("details");
   const [showChat, setShowChat] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showPollsModal, setShowPollsModal] = useState(false);
+  const [showReviewsModal, setShowReviewsModal] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackPrefill, setFeedbackPrefill] = useState({});
 
   // Fetch event details
   const fetchEventDetail = useCallback(async () => {
@@ -211,6 +217,130 @@ const EventDetail = () => {
               </div>
             </div>
 
+            {/* Interactive Action Buttons */}
+            <div className="interactive-actions">
+              <h3>Quick Actions</h3>
+              <div className="action-buttons-grid">
+                {/* Share Event Button */}
+                <button
+                  className="action-btn share-btn"
+                  onClick={() => setShowShareModal(true)}
+                  title="Share this event with others"
+                >
+                  <div className="action-icon">📤</div>
+                  <div className="action-content">
+                    <span className="action-title">Share Event</span>
+                    <span className="action-description">Share with friends & social media</span>
+                  </div>
+                </button>
+
+                {/* Polls Button */}
+                {event.allowPolls && (
+                  <button
+                    className="action-btn polls-btn"
+                    onClick={() => setShowPollsModal(true)}
+                    title="View and participate in polls"
+                  >
+                    <div className="action-icon">📊</div>
+                    <div className="action-content">
+                      <span className="action-title">Polls</span>
+                      <span className="action-description">Vote or create polls</span>
+                    </div>
+                  </button>
+                )}
+
+                {/* Reviews Button */}
+                {event.allowReviews && (
+                  <button
+                    className="action-btn reviews-btn"
+                    onClick={() => setShowReviewsModal(true)}
+                    title="Leave a review or read others"
+                  >
+                    <div className="action-icon">⭐</div>
+                    <div className="action-content">
+                      <span className="action-title">Reviews</span>
+                      <span className="action-description">Rate & review this event</span>
+                    </div>
+                  </button>
+                )}
+
+                {/* Chat Button */}
+                {event.allowChat && isUserRegistered && (
+                  <button
+                    className="action-btn chat-btn"
+                    onClick={() => setShowChat(true)}
+                    title="Join the event chat"
+                  >
+                    <div className="action-icon">💬</div>
+                    <div className="action-content">
+                      <span className="action-title">Chat</span>
+                      <span className="action-description">Join the conversation</span>
+                    </div>
+                  </button>
+                )}
+
+                {/* Feedback Button */}
+                <button
+                  className="action-btn feedback-btn"
+                  onClick={() => {
+                    setFeedbackPrefill({
+                      category: "event-feedback",
+                      subject: `Feedback for: ${event?.title || 'Event'}`,
+                      message: `I'd like to share my feedback about this event:\n\n`
+                    });
+                    setShowFeedbackModal(true);
+                  }}
+                  title="Send feedback about this event"
+                >
+                  <div className="action-icon">📝</div>
+                  <div className="action-content">
+                    <span className="action-title">Feedback</span>
+                    <span className="action-description">Share your thoughts</span>
+                  </div>
+                </button>
+
+                {/* Report Issue Button */}
+                <button
+                  className="action-btn report-btn"
+                  onClick={() => {
+                    setFeedbackPrefill({
+                      category: "bug-report",
+                      subject: `Bug Report: ${event?.title || 'Event'}`,
+                      message: `I encountered an issue with this event:\n\n`
+                    });
+                    setShowFeedbackModal(true);
+                  }}
+                  title="Report an issue with this event"
+                >
+                  <div className="action-icon">🚨</div>
+                  <div className="action-content">
+                    <span className="action-title">Report Issue</span>
+                    <span className="action-description">Report problems or bugs</span>
+                  </div>
+                </button>
+
+                {/* Contact Organizer Button */}
+                <button
+                  className="action-btn contact-btn"
+                  onClick={() => {
+                    setFeedbackPrefill({
+                      category: "event-feedback",
+                      subject: `Question about: ${event?.title || 'Event'}`,
+                      message: `Hi, I have a question about this event:\n\n`
+                    });
+                    setShowFeedbackModal(true);
+                  }}
+                  title="Contact the event organizer"
+                >
+                  <div className="action-icon">📧</div>
+                  <div className="action-content">
+                    <span className="action-title">Contact Organizer</span>
+                    <span className="action-description">Get in touch with host</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
             {/* Event Actions */}
             <div className="event-actions">
               {!isUserRegistered ? (
@@ -227,19 +357,6 @@ const EventDetail = () => {
                   onClick={handleUnregister}
                 >
                   Unregister
-                </button>
-              )}
-              
-              {event.shareable && (
-                <EventShare event={event} />
-              )}
-              
-              {event.allowChat && isUserRegistered && (
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setShowChat(true)}
-                >
-                  💬 Chat
                 </button>
               )}
             </div>
@@ -427,6 +544,101 @@ const EventDetail = () => {
             isOpen={showChat}
             onClose={() => setShowChat(false)}
           />
+        )}
+
+        {/* Share Modal */}
+        {showShareModal && (
+          <div className="modal-overlay" onClick={() => setShowShareModal(false)}>
+            <div className="modal share-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Share This Event</h3>
+                <button 
+                  className="close-btn" 
+                  onClick={() => setShowShareModal(false)}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="modal-content">
+                <EventShare event={event} isModal={true} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Polls Modal */}
+        {showPollsModal && (
+          <div className="modal-overlay" onClick={() => setShowPollsModal(false)}>
+            <div className="modal polls-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Event Polls</h3>
+                <button 
+                  className="close-btn" 
+                  onClick={() => setShowPollsModal(false)}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="modal-content">
+                <EventPoll 
+                  eventId={event.id} 
+                  canCreatePoll={canCreatePolls}
+                  isModal={true}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reviews Modal */}
+        {showReviewsModal && (
+          <div className="modal-overlay" onClick={() => setShowReviewsModal(false)}>
+            <div className="modal reviews-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Event Reviews</h3>
+                <button 
+                  className="close-btn" 
+                  onClick={() => setShowReviewsModal(false)}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="modal-content">
+                <RatingReview 
+                  eventId={event.id} 
+                  canReview={canUserReview}
+                  isModal={true}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Event Feedback Modal */}
+        {showFeedbackModal && (
+          <div className="modal-overlay" onClick={() => setShowFeedbackModal(false)}>
+            <div className="modal feedback-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Event Feedback</h3>
+                <button 
+                  className="close-btn" 
+                  onClick={() => setShowFeedbackModal(false)}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="modal-content">
+                <EventFeedback 
+                  eventId={event?.id}
+                  eventTitle={event?.title}
+                  isModal={true}
+                  prefillCategory={feedbackPrefill.category}
+                  prefillSubject={feedbackPrefill.subject}
+                  prefillMessage={feedbackPrefill.message}
+                />
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
