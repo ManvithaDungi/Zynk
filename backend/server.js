@@ -60,7 +60,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Import database connection
-const connectDB = require('./config/db');
+const { connectDB } = require('./config/db');
 
 // Connect to MongoDB
 connectDB();

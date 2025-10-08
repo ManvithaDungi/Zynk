@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
+const { requireDBConnection } = require('../middleware/dbHealth');
 
 const router = express.Router();
 
@@ -83,7 +84,7 @@ const loginValidation = [
 ];
 
 // Registration endpoint
-router.post('/register', authLimiter, registerValidation, async (req, res) => {
+router.post('/register', authLimiter, requireDBConnection, registerValidation, async (req, res) => {
   try {
     // Check validation errors
     const errors = validationResult(req);
@@ -102,8 +103,20 @@ router.post('/register', authLimiter, registerValidation, async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
+    // Generate username from email (before @ symbol)
+    let username = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+    
+    // If username is empty or too short, use a fallback
+    if (!username || username.length < 3) {
+      username = 'user' + Math.random().toString(36).substr(2, 6);
+    } else {
+      username = username + Math.random().toString(36).substr(2, 4);
+    }
+    
+    console.log('Creating user with:', { name, email, username });
+
     // Create user (password hashing should be in User model pre-save hook)
-    const user = new User({ name, email, password });
+    const user = new User({ name, email, password, username });
     await user.save();
 
     // Generate token with username for socket.io
@@ -143,7 +156,7 @@ router.post('/register', authLimiter, registerValidation, async (req, res) => {
 });
 
 // Login endpoint
-router.post('/login', authLimiter, loginValidation, async (req, res) => {
+router.post('/login', authLimiter, requireDBConnection, loginValidation, async (req, res) => {
   try {
     // Check validation errors
     const errors = validationResult(req);

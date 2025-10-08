@@ -155,11 +155,11 @@ const Login= () => {
               className="login-input"
               disabled={loading}
               required
-              minLength={8}
+              minLength={6}
             />
             {!isLogin && (
               <small className="password-hint">
-                Password must contain uppercase, lowercase, and numbers (min 8 characters)
+                Password must be at least 6 characters long
               </small>
             )}
           </div>
