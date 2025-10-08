@@ -3,6 +3,16 @@
   display: inline-block;
 }
 
+/* Modal mode styling */
+.event-share.modal-mode {
+  display: block;
+  width: 100%;
+}
+
+.event-share.modal-mode .share-content {
+  padding: 0;
+}
+
 /* Enhanced Share Button */
 .share-btn {
   display: flex;

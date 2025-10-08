@@ -115,21 +115,93 @@ const EventShare = ({ event, isModal = false }) => {
     discord: 'Discord'
   };
 
+  // Render share content directly when in modal mode
+  if (isModal) {
+    return (
+      <div className="event-share modal-mode">
+        <div className="share-content">
+          <div className="event-preview">
+            <h4>{eventTitle}</h4>
+            <p className="event-meta">
+              📅 {eventDate} • 📍 {eventLocation}
+            </p>
+            <p className="event-description">
+              {eventDescription.length > 100 
+                ? `${eventDescription.substring(0, 100)}...` 
+                : eventDescription
+              }
+            </p>
+          </div>
+
+          <div className="share-options">
+            <h4>Share via:</h4>
+            <div className="social-buttons">
+              {Object.entries(shareUrls).map(([platform, url]) => (
+                <button
+                  key={platform}
+                  className={`social-btn ${platform} ${activeShareMethod === platform ? 'active' : ''}`}
+                  onClick={() => handleSocialShare(platform)}
+                  title={`Share on ${socialNames[platform]}`}
+                >
+                  <span className="social-icon">{socialIcons[platform]}</span>
+                  <span className="social-name">{socialNames[platform]}</span>
+                  {activeShareMethod === platform && (
+                    <span className="share-animation">✨</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="copy-link-section">
+            <h4>Or copy link:</h4>
+            <div className="copy-link-container">
+              <input
+                type="text"
+                value={eventUrl}
+                readOnly
+                className="link-input"
+              />
+              <button
+                className={`copy-btn ${copied ? 'copied' : ''}`}
+                onClick={copyToClipboard}
+              >
+                {copied ? '✓ Copied!' : 'Copy'}
+              </button>
+            </div>
+          </div>
+
+          <div className="share-stats">
+            <p>
+              <strong>Share this event</strong> to help others discover it!
+            </p>
+            {shareCount > 0 && (
+              <div className="share-counter">
+                <span className="share-count-badge">
+                  📊 {shareCount} share{shareCount !== 1 ? 's' : ''} this session
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Regular mode - render button and modal
   return (
     <div className="event-share">
-      {!isModal && (
-        <button
-          className="share-btn"
-          onClick={shareViaWebAPI}
-          title="Share this event"
-        >
-          <span className="share-icon">📤</span>
-          Share Event
-          {shareCount > 0 && (
-            <span className="share-count">({shareCount})</span>
-          )}
-        </button>
-      )}
+      <button
+        className="share-btn"
+        onClick={shareViaWebAPI}
+        title="Share this event"
+      >
+        <span className="share-icon">📤</span>
+        Share Event
+        {shareCount > 0 && (
+          <span className="share-count">({shareCount})</span>
+        )}
+      </button>
 
       {/* Share Modal */}
       {showShareModal && (
