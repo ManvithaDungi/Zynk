@@ -9,8 +9,8 @@ async function fixEventsFinal() {
     // Login to get authentication token
     console.log('1. Logging in...');
     const loginResponse = await axios.post(`${BASE_URL}/auth/login`, {
-      email: 'test1759941357349@example.com',
-      password: 'pass123'
+      email: 'test3626@example.com',
+      password: 'pass3626'
     });
     
     const authToken = loginResponse.data.token;

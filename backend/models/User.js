@@ -68,7 +68,8 @@ const userSchema = new mongoose.Schema({
     default: false
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  collection: 'user' // Explicitly set collection name to 'user'
 });
 
 userSchema.pre('save', async function(next) {

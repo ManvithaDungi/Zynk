@@ -1,8 +1,8 @@
 -- MongoDB Collection Setup for Users
--- This script creates the users collection with proper indexes
+-- This script creates the user collection with proper indexes
 
--- Create users collection with validation
-db.createCollection("users", {
+-- Create user collection with validation
+db.createCollection("user", {
   validator: {
     $jsonSchema: {
       bsonType: "object",
@@ -78,8 +78,8 @@ db.createCollection("users", {
 });
 
 -- Create indexes for better performance
-db.users.createIndex({ "email": 1 }, { unique: true });
-db.users.createIndex({ "username": 1 }, { unique: true });
-db.users.createIndex({ "createdAt": -1 });
-db.users.createIndex({ "followers": 1 });
-db.users.createIndex({ "following": 1 });
+db.user.createIndex({ "email": 1 }, { unique: true });
+db.user.createIndex({ "username": 1 }, { unique: true });
+db.user.createIndex({ "createdAt": -1 });
+db.user.createIndex({ "followers": 1 });
+db.user.createIndex({ "following": 1 });
