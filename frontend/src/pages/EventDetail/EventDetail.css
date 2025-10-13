@@ -1133,11 +1133,15 @@
 }
 
 .report-issue-modal {
-  max-width: 1000px;
+  max-width: 1200px;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .contact-us-modal {
-  max-width: 1000px;
+  max-width: 1200px;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 /* Responsive Modal */

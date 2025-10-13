@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar/Navbar";
 import { eventsAPI } from "../../utils/api";
+import { useAuth } from "../../context/AuthContext";
 import "./EventDetail.css";
 import AlbumManager from "../../components/AlbumManager/AlbumManager";
 import MemoryViewer from "../../components/MemoryViewer/MemoryViewer";
@@ -13,7 +14,6 @@ import EventShare from "../../components/EventShare/EventShare";
 import EventFeedback from "../../components/EventFeedback/EventFeedback";
 import ReportIssue from "../../components/ReportIssue/ReportIssue";
 import ContactUs from "../../components/ContactUs/ContactUs";
-import { useAuth } from "../../context/AuthContext";
 
 const EventDetail = () => {
   const { id } = useParams();
@@ -649,6 +649,7 @@ const EventDetail = () => {
                   eventId={event?.id}
                   eventTitle={event?.title}
                   isModal={true}
+                  onClose={() => setShowReportIssueModal(false)}
                 />
               </div>
             </div>
@@ -674,6 +675,7 @@ const EventDetail = () => {
                   eventTitle={event?.title}
                   organizerName={event?.organizer?.name}
                   isModal={true}
+                  onClose={() => setShowContactUsModal(false)}
                 />
               </div>
             </div>

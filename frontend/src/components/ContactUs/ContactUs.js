@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
 import "./ContactUs.css";
 
-const ContactUs = ({ eventId, eventTitle, organizerName, isModal = false }) => {
+const ContactUs = ({ eventId, eventTitle, organizerName, isModal = false, onClose }) => {
   const { user } = useAuth();
   
   const [formData, setFormData] = useState({
@@ -100,7 +100,7 @@ const ContactUs = ({ eventId, eventTitle, organizerName, isModal = false }) => {
     if (formData.preferredContactMethod === "phone" || formData.preferredContactMethod === "either") {
       if (!formData.phoneNumber.trim()) {
         newErrors.phoneNumber = "Phone number is required for phone contact";
-      } else if (!/^[\+]?[1-9][\d]{0,15}$/.test(formData.phoneNumber.replace(/[\s\-\(\)]/g, ""))) {
+      } else if (!/^[+]?[1-9][\d]{0,15}$/.test(formData.phoneNumber.replace(/[\s\-()]/g, ""))) {
         newErrors.phoneNumber = "Please enter a valid phone number";
       }
     }
@@ -142,10 +142,54 @@ const ContactUs = ({ eventId, eventTitle, organizerName, isModal = false }) => {
       try {
         await axios.post("/api/feedback", submitData);
         setSuccessMessage(`Thank you for contacting us! ${organizerName ? "We'll get back to you soon." : "We'll review your message and respond as soon as possible."}`);
+        
+        // Reset form and close modal after successful submission if in modal mode
+        if (isModal && onClose) {
+          // Reset form data
+          setFormData({
+            name: user?.name || "",
+            email: user?.email || "",
+            inquiryType: "",
+            subject: "",
+            message: "",
+            urgency: "normal",
+            preferredContactMethod: "email",
+            phoneNumber: "",
+            eventId: eventId,
+            eventTitle: eventTitle,
+            organizerName: organizerName
+          });
+          
+          setTimeout(() => {
+            onClose();
+          }, 2000); // Close after 2 seconds to show success message
+        }
       } catch (apiError) {
         // If API endpoint doesn't exist, simulate success for demo purposes
         console.log("API endpoint not available, simulating success:", apiError);
         setSuccessMessage(`Thank you for contacting us! ${organizerName ? "We'll get back to you soon." : "We'll review your message and respond as soon as possible."}`);
+        
+        // Reset form and close modal after successful submission if in modal mode
+        if (isModal && onClose) {
+          // Reset form data
+          setFormData({
+            name: user?.name || "",
+            email: user?.email || "",
+            inquiryType: "",
+            subject: "",
+            message: "",
+            urgency: "normal",
+            preferredContactMethod: "email",
+            phoneNumber: "",
+            eventId: eventId,
+            eventTitle: eventTitle,
+            organizerName: organizerName
+          });
+          
+          setTimeout(() => {
+            onClose();
+          }, 2000); // Close after 2 seconds to show success message
+        }
       }
     } catch (error) {
       console.error("Error submitting contact form:", error);
@@ -153,7 +197,7 @@ const ContactUs = ({ eventId, eventTitle, organizerName, isModal = false }) => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, validateForm, organizerName]);
+  }, [formData, validateForm, organizerName, eventId, eventTitle, isModal, onClose, user?.email, user?.name]);
 
   return (
     <div className={`contact-us ${isModal ? 'modal-mode' : ''}`}>
@@ -166,6 +210,15 @@ const ContactUs = ({ eventId, eventTitle, organizerName, isModal = false }) => {
               : `Have a question about "${eventTitle}"? We're here to help!`
             }
           </p>
+          {isModal && onClose && (
+            <button 
+              className="close-form-btn"
+              onClick={onClose}
+              type="button"
+            >
+              ×
+            </button>
+          )}
         </header>
 
         <form onSubmit={handleSubmit} className="contact-us-form">

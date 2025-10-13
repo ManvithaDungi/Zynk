@@ -18,7 +18,7 @@
 
 .report-issue.modal-mode .report-issue-container {
   max-width: 100%;
-  padding: 20px;
+  padding: 10px;
 }
 
 /* Header */
@@ -27,6 +27,11 @@
   margin-bottom: 40px;
   padding-bottom: 20px;
   position: relative;
+}
+
+.report-issue.modal-mode .report-header {
+  margin-bottom: 20px;
+  padding-bottom: 10px;
 }
 
 .report-header::before {
@@ -50,8 +55,8 @@
 }
 
 .report-issue.modal-mode .report-header h2 {
-  font-size: 24px;
-  margin-bottom: 8px;
+  font-size: 20px;
+  margin-bottom: 6px;
 }
 
 .report-header p {
@@ -62,7 +67,32 @@
 }
 
 .report-issue.modal-mode .report-header p {
-  font-size: 14px;
+  font-size: 12px;
+}
+
+/* Close Form Button */
+.close-form-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #333333;
+  color: #ffffff;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.close-form-btn:hover {
+  background: #444444;
+  transform: scale(1.1);
 }
 
 /* Form */
@@ -75,7 +105,7 @@
 }
 
 .report-issue.modal-mode .report-issue-form {
-  padding: 30px;
+  padding: 20px;
   border-radius: 12px;
 }
 
@@ -84,6 +114,11 @@
   margin-bottom: 40px;
   padding-bottom: 30px;
   border-bottom: 1px solid #333333;
+}
+
+.report-issue.modal-mode .form-section {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
 }
 
 .form-section:last-of-type {
@@ -97,6 +132,11 @@
   color: #ffffff;
   margin-bottom: 20px;
   letter-spacing: -0.01em;
+}
+
+.report-issue.modal-mode .form-section h3 {
+  font-size: 16px;
+  margin-bottom: 12px;
 }
 
 /* Form Rows */
@@ -115,6 +155,10 @@
 /* Form Groups */
 .form-group {
   margin-bottom: 20px;
+}
+
+.report-issue.modal-mode .form-group {
+  margin-bottom: 12px;
 }
 
 .form-group label {
@@ -162,6 +206,10 @@
   min-height: 100px;
 }
 
+.report-issue.modal-mode .form-group textarea {
+  min-height: 80px;
+}
+
 .form-group input.error,
 .form-group select.error,
 .form-group textarea.error {
@@ -198,6 +246,12 @@
   box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
 }
 
+.report-issue.modal-mode .form-success-message {
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
 .form-error-message {
   background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
   color: white;
@@ -209,10 +263,20 @@
   box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
 }
 
+.report-issue.modal-mode .form-error-message {
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
 /* Submit Button */
 .form-actions {
   text-align: center;
   margin-top: 40px;
+}
+
+.report-issue.modal-mode .form-actions {
+  margin-top: 20px;
 }
 
 .submit-btn {

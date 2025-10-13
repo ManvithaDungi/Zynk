@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
 import "./ReportIssue.css";
 
-const ReportIssue = ({ eventId, eventTitle, isModal = false }) => {
+const ReportIssue = ({ eventId, eventTitle, isModal = false, onClose }) => {
   const { user } = useAuth();
   
   const [formData, setFormData] = useState({
@@ -128,10 +128,56 @@ const ReportIssue = ({ eventId, eventTitle, isModal = false }) => {
       try {
         await axios.post("/api/feedback", submitData);
         setSuccessMessage("Thank you for reporting this issue! We'll investigate and get back to you soon.");
+        
+        // Reset form and close modal after successful submission if in modal mode
+        if (isModal && onClose) {
+          // Reset form data
+          setFormData({
+            name: user?.name || "",
+            email: user?.email || "",
+            issueType: "",
+            priority: "medium",
+            subject: "",
+            description: "",
+            stepsToReproduce: "",
+            expectedBehavior: "",
+            actualBehavior: "",
+            browserInfo: navigator.userAgent,
+            eventId: eventId,
+            eventTitle: eventTitle
+          });
+          
+          setTimeout(() => {
+            onClose();
+          }, 2000); // Close after 2 seconds to show success message
+        }
       } catch (apiError) {
         // If API endpoint doesn't exist, simulate success for demo purposes
         console.log("API endpoint not available, simulating success:", apiError);
         setSuccessMessage("Thank you for reporting this issue! We'll investigate and get back to you soon.");
+        
+        // Reset form and close modal after successful submission if in modal mode
+        if (isModal && onClose) {
+          // Reset form data
+          setFormData({
+            name: user?.name || "",
+            email: user?.email || "",
+            issueType: "",
+            priority: "medium",
+            subject: "",
+            description: "",
+            stepsToReproduce: "",
+            expectedBehavior: "",
+            actualBehavior: "",
+            browserInfo: navigator.userAgent,
+            eventId: eventId,
+            eventTitle: eventTitle
+          });
+          
+          setTimeout(() => {
+            onClose();
+          }, 2000); // Close after 2 seconds to show success message
+        }
       }
     } catch (error) {
       console.error("Error submitting report:", error);
@@ -139,7 +185,7 @@ const ReportIssue = ({ eventId, eventTitle, isModal = false }) => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, validateForm]);
+  }, [formData, validateForm, eventId, eventTitle, isModal, onClose, user?.email, user?.name]);
 
   return (
     <div className={`report-issue ${isModal ? 'modal-mode' : ''}`}>
@@ -147,6 +193,15 @@ const ReportIssue = ({ eventId, eventTitle, isModal = false }) => {
         <header className="report-header">
           <h2>Report an Issue</h2>
           <p>Help us improve by reporting bugs or issues with "{eventTitle}"</p>
+          {isModal && onClose && (
+            <button 
+              className="close-form-btn"
+              onClick={onClose}
+              type="button"
+            >
+              ×
+            </button>
+          )}
         </header>
 
         <form onSubmit={handleSubmit} className="report-issue-form">
