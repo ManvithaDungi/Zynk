@@ -1,12 +1,12 @@
 /**
- * ChatMessage Routes
+ * Message Routes
  * Handles all HTTP routes for chat message management
  * CRUD operations: Create, Read, Update, Delete messages
  */
 
 const express = require('express');
 const router = express.Router();
-const ChatMessage = require('../models/ChatMessage');
+const Message = require('../models/Message');
 const User = require('../models/User');
 
 /**
@@ -20,14 +20,14 @@ router.get('/', async (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
     const skip = parseInt(req.query.skip) || 0;
     
-    const messages = await ChatMessage.find()
+    const messages = await Message.find()
       .populate('sender', 'username email avatar status')
       .sort({ createdAt: -1 })
       .limit(limit)
       .skip(skip)
       .select('-__v');
     
-    const total = await ChatMessage.countDocuments();
+    const total = await Message.countDocuments();
     
     res.json({
       success: true,
@@ -55,11 +55,7 @@ router.get('/recent', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50;
     
-    const messages = await ChatMessage.find()
-      .populate('sender', 'username email avatar status')
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .select('-__v');
+    const messages = await Message.getRecentMessages(limit);
     
     res.json({
       success: true,
@@ -83,13 +79,7 @@ router.get('/recent', async (req, res) => {
  */
 router.get('/stats', async (req, res) => {
   try {
-    const total = await ChatMessage.countDocuments();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayCount = await ChatMessage.countDocuments({
-      createdAt: { $gte: today }
-    });
-    const stats = { total, today: todayCount };
+    const stats = await Message.getMessageStats();
     
     res.json({
       success: true,
@@ -114,10 +104,7 @@ router.get('/user/:userId', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 100;
     
-    const messages = await ChatMessage.find({ sender: req.params.userId })
-      .populate('sender', 'username email avatar')
-      .sort({ createdAt: -1 })
-      .limit(limit);
+    const messages = await Message.getMessagesByUser(req.params.userId, limit);
     
     res.json({
       success: true,
@@ -152,12 +139,7 @@ router.get('/search', async (req, res) => {
       });
     }
     
-    const messages = await ChatMessage.find({
-      content: { $regex: q, $options: 'i' }
-    })
-      .populate('sender', 'username avatar')
-      .sort({ createdAt: -1 })
-      .limit(limit);
+    const messages = await Message.searchMessages(q, limit);
     
     res.json({
       success: true,
@@ -181,14 +163,14 @@ router.get('/search', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const message = await ChatMessage.findById(req.params.id)
+    const message = await Message.findById(req.params.id)
       .populate('sender', 'username email avatar status')
       .select('-__v');
     
     if (!message) {
       return res.status(404).json({
         success: false,
-        message: 'ChatMessage not found'
+        message: 'Message not found'
       });
     }
     
@@ -202,7 +184,7 @@ router.get('/:id', async (req, res) => {
     if (error.kind === 'ObjectId') {
       return res.status(404).json({
         success: false,
-        message: 'ChatMessage not found'
+        message: 'Message not found'
       });
     }
     
@@ -241,7 +223,7 @@ router.post('/', async (req, res) => {
     }
     
     // Create message
-    const message = await ChatMessage.create({
+    const message = await Message.create({
       sender,
       senderName: senderName || user.username,
       content,
@@ -253,7 +235,7 @@ router.post('/', async (req, res) => {
     
     res.status(201).json({
       success: true,
-      message: 'ChatMessage created successfully',
+      message: 'Message created successfully',
       data: message
     });
   } catch (error) {
@@ -292,24 +274,24 @@ router.put('/:id', async (req, res) => {
       });
     }
     
-    const message = await ChatMessage.findById(req.params.id);
+    const message = await Message.findById(req.params.id);
     
     if (!message) {
       return res.status(404).json({
         success: false,
-        message: 'ChatMessage not found'
+        message: 'Message not found'
       });
     }
     
     // Use the instance method to edit
-    await message.editChatMessage(content);
+    await message.editMessage(content);
     
     // Populate sender
     await message.populate('sender', 'username email avatar status');
     
     res.json({
       success: true,
-      message: 'ChatMessage updated successfully',
+      message: 'Message updated successfully',
       data: message
     });
   } catch (error) {
@@ -338,12 +320,12 @@ router.patch('/:id/read', async (req, res) => {
       });
     }
     
-    const message = await ChatMessage.findById(req.params.id);
+    const message = await Message.findById(req.params.id);
     
     if (!message) {
       return res.status(404).json({
         success: false,
-        message: 'ChatMessage not found'
+        message: 'Message not found'
       });
     }
     
@@ -351,7 +333,7 @@ router.patch('/:id/read', async (req, res) => {
     
     res.json({
       success: true,
-      message: 'ChatMessage marked as read',
+      message: 'Message marked as read',
       data: message
     });
   } catch (error) {
@@ -371,18 +353,18 @@ router.patch('/:id/read', async (req, res) => {
  */
 router.delete('/:id', async (req, res) => {
   try {
-    const message = await ChatMessage.findByIdAndDelete(req.params.id);
+    const message = await Message.findByIdAndDelete(req.params.id);
     
     if (!message) {
       return res.status(404).json({
         success: false,
-        message: 'ChatMessage not found'
+        message: 'Message not found'
       });
     }
     
     res.json({
       success: true,
-      message: 'ChatMessage deleted successfully',
+      message: 'Message deleted successfully',
       data: message
     });
   } catch (error) {
@@ -391,7 +373,7 @@ router.delete('/:id', async (req, res) => {
     if (error.kind === 'ObjectId') {
       return res.status(404).json({
         success: false,
-        message: 'ChatMessage not found'
+        message: 'Message not found'
       });
     }
     
@@ -419,11 +401,7 @@ router.delete('/old/:days', async (req, res) => {
       });
     }
     
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
-    const result = await ChatMessage.deleteMany({
-      createdAt: { $lt: cutoffDate }
-    });
+    const result = await Message.deleteOldMessages(days);
     
     res.json({
       success: true,
@@ -447,7 +425,7 @@ router.delete('/old/:days', async (req, res) => {
  */
 router.get('/export/json', async (req, res) => {
   try {
-    const messages = await ChatMessage.find()
+    const messages = await Message.find()
       .populate('sender', 'username email')
       .sort({ createdAt: 1 })
       .select('-__v');

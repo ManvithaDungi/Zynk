@@ -36,14 +36,17 @@ const connectDB = async (retries = 3) => {
       console.log(`🔗 Connecting to: ${mongoUri.replace(/\/\/.*@/, '//***:***@')} (Attempt ${i + 1}/${retries})`);
 
       // Use the tested working configuration for MongoDB Atlas
+      // Note: TLS options adjusted to handle SSL/TLS handshake errors
       const connectionOptions = {
-        maxPoolSize: 1,
-        serverSelectionTimeoutMS: 5000,
-        socketTimeoutMS: 10000,
-        connectTimeoutMS: 5000,
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 30000,
+        socketTimeoutMS: 45000,
+        connectTimeoutMS: 30000,
+        // TLS configuration - relaxed for troubleshooting SSL handshake issues
+        // If this fixes the error, consider investigating certificate chain issues
         tls: true,
-        tlsAllowInvalidCertificates: false,
-        tlsAllowInvalidHostnames: false,
+        tlsAllowInvalidCertificates: true,  // Allows connection even with certificate validation issues
+        tlsAllowInvalidHostnames: true,      // Allows hostname mismatch
         authSource: 'admin',
         retryWrites: true,
         w: 'majority',
@@ -80,6 +83,16 @@ const connectDB = async (retries = 3) => {
     } catch (error) {
       console.error(`❌ Database connection error (Attempt ${i + 1}/${retries}): ${error.message}`);
       
+      // Check for SSL/TLS specific errors
+      if (error.message.includes('SSL') || error.message.includes('TLS') || 
+          error.message.includes('OPENSSL') || error.message.includes('ALERT')) {
+        console.error('🔒 SSL/TLS Error detected. This may be due to:');
+        console.error('   - Certificate validation issues');
+        console.error('   - Firewall/proxy blocking TLS connections');
+        console.error('   - Network configuration problems');
+        console.error('   - MongoDB Atlas cluster TLS settings');
+      }
+      
       if (i === retries - 1) {
         console.error('💡 MongoDB Atlas connection failed after all attempts');
         console.error('💡 Please check your MongoDB Atlas settings:');
@@ -87,6 +100,8 @@ const connectDB = async (retries = 3) => {
         console.error('💡 2. Database user permissions');
         console.error('💡 3. Cluster status and network access');
         console.error('💡 4. Try updating your connection string with ?retryWrites=false&w=majority');
+        console.error('💡 5. Check if your network/firewall allows TLS connections to MongoDB Atlas');
+        console.error('💡 6. Verify your MongoDB Atlas cluster is accessible and not paused');
         process.exit(1);
       } else {
         console.log(`⏳ Retrying connection in 3 seconds...`);

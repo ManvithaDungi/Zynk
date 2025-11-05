@@ -4,45 +4,16 @@
  * Displays live poll results with percentage charts
  */
 
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { communicationAPI } from '../../utils/api';
+import React, { useState } from 'react';
 import './Polls.css';
 
-function Polls({ socket, currentUser: propCurrentUser, polls: propPolls }) {
-  const { user: authUser } = useAuth();
+function Polls({ socket, currentUser, polls }) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newPollQuestion, setNewPollQuestion] = useState('');
   const [newPollDescription, setNewPollDescription] = useState('');
   const [newPollOptions, setNewPollOptions] = useState(['', '']);
   const [allowMultipleVotes, setAllowMultipleVotes] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'active', 'closed'
-  const [polls, setPolls] = useState(propPolls || []);
-  const [loading, setLoading] = useState(false);
-
-  // Use prop values or fallback to auth user
-  const currentUser = propCurrentUser || authUser;
-
-  /**
-   * Fetch polls when component mounts
-   */
-  useEffect(() => {
-    const fetchPolls = async () => {
-      if (!propPolls) {
-        try {
-          setLoading(true);
-          const response = await communicationAPI.getPolls();
-          setPolls(response.data.polls || []);
-        } catch (error) {
-          console.error('Error fetching polls:', error);
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchPolls();
-  }, [propPolls]);
 
   /**
    * Add new option field
@@ -74,7 +45,7 @@ function Polls({ socket, currentUser: propCurrentUser, polls: propPolls }) {
   /**
    * Handle create poll
    */
-  const handleCreatePoll = async (e) => {
+  const handleCreatePoll = (e) => {
     e.preventDefault();
 
     // Validation
@@ -89,81 +60,50 @@ function Polls({ socket, currentUser: propCurrentUser, polls: propPolls }) {
       return;
     }
 
-    try {
-      // Create poll via API
-      await communicationAPI.createPoll({
-        question: newPollQuestion.trim(),
-        description: newPollDescription.trim(),
-        options: validOptions,
-        allowMultipleVotes: allowMultipleVotes,
-        pollType: allowMultipleVotes ? 'multiple' : 'single'
-      });
+    // Emit poll creation event
+    socket.emit('poll:create', {
+      question: newPollQuestion.trim(),
+      description: newPollDescription.trim(),
+      options: validOptions,
+      createdBy: currentUser._id,
+      allowMultipleVotes: allowMultipleVotes,
+      pollType: allowMultipleVotes ? 'multiple' : 'single'
+    });
 
-      // Refresh polls list
-      const response = await communicationAPI.getPolls();
-      setPolls(response.data.polls || []);
-
-      // Reset form
-      setNewPollQuestion('');
-      setNewPollDescription('');
-      setNewPollOptions(['', '']);
-      setAllowMultipleVotes(false);
-      setShowCreateForm(false);
-    } catch (error) {
-      console.error('Error creating poll:', error);
-      alert('Failed to create poll. Please try again.');
-    }
+    // Reset form
+    setNewPollQuestion('');
+    setNewPollDescription('');
+    setNewPollOptions(['', '']);
+    setAllowMultipleVotes(false);
+    setShowCreateForm(false);
   };
 
   /**
    * Handle vote
    */
-  const handleVote = async (pollId, optionId) => {
-    try {
-      await communicationAPI.votePoll(pollId, { optionId });
-      
-      // Refresh polls list
-      const response = await communicationAPI.getPolls();
-      setPolls(response.data.polls || []);
-    } catch (error) {
-      console.error('Error voting on poll:', error);
-      alert('Failed to vote. Please try again.');
-    }
+  const handleVote = (pollId, optionId) => {
+    socket.emit('poll:vote', {
+      pollId,
+      userId: currentUser._id,
+      optionId
+    });
   };
 
   /**
    * Handle close poll
    */
-  const handleClosePoll = async (pollId) => {
+  const handleClosePoll = (pollId) => {
     if (window.confirm('Are you sure you want to close this poll?')) {
-      try {
-        await communicationAPI.closePoll(pollId);
-        
-        // Refresh polls list
-        const response = await communicationAPI.getPolls();
-        setPolls(response.data.polls || []);
-      } catch (error) {
-        console.error('Error closing poll:', error);
-        alert('Failed to close poll. Please try again.');
-      }
+      socket.emit('poll:close', { pollId });
     }
   };
 
   /**
    * Handle delete poll
    */
-  const handleDeletePoll = async (pollId) => {
+  const handleDeletePoll = (pollId) => {
     if (window.confirm('Are you sure you want to delete this poll? This cannot be undone.')) {
-      try {
-        await communicationAPI.deletePoll(pollId);
-        
-        // Refresh polls list
-        const response = await communicationAPI.getPolls();
-        setPolls(response.data.polls || []);
-      } catch (error) {
-        console.error('Error deleting poll:', error);
-        alert('Failed to delete poll. Please try again.');
-      }
+      socket.emit('poll:delete', { pollId });
     }
   };
 
@@ -184,7 +124,7 @@ function Polls({ socket, currentUser: propCurrentUser, polls: propPolls }) {
   /**
    * Filter polls based on status
    */
-  const filteredPolls = (polls || []).filter(poll => {
+  const filteredPolls = polls.filter(poll => {
     if (filterStatus === 'active') return poll.isActive && poll.status === 'active';
     if (filterStatus === 'closed') return !poll.isActive || poll.status === 'closed';
     return true;
@@ -221,19 +161,19 @@ function Polls({ socket, currentUser: propCurrentUser, polls: propPolls }) {
           className={`filter-btn ${filterStatus === 'all' ? 'active' : ''}`}
           onClick={() => setFilterStatus('all')}
         >
-          All Polls ({(polls || []).length})
+          All Polls ({polls.length})
         </button>
         <button
           className={`filter-btn ${filterStatus === 'active' ? 'active' : ''}`}
           onClick={() => setFilterStatus('active')}
         >
-          Active ({(polls || []).filter(p => p.isActive && p.status === 'active').length})
+          Active ({polls.filter(p => p.isActive && p.status === 'active').length})
         </button>
         <button
           className={`filter-btn ${filterStatus === 'closed' ? 'active' : ''}`}
           onClick={() => setFilterStatus('closed')}
         >
-          Closed ({(polls || []).filter(p => !p.isActive || p.status === 'closed').length})
+          Closed ({polls.filter(p => !p.isActive || p.status === 'closed').length})
         </button>
       </div>
 
@@ -287,7 +227,7 @@ function Polls({ socket, currentUser: propCurrentUser, polls: propPolls }) {
                       className="remove-option-btn"
                       onClick={() => handleRemoveOption(index)}
                     >
-                      Remove
+                      ❌
                     </button>
                   )}
                 </div>
@@ -298,7 +238,7 @@ function Polls({ socket, currentUser: propCurrentUser, polls: propPolls }) {
                   className="add-option-btn"
                   onClick={handleAddOption}
                 >
-                  Add Option
+                  ➕ Add Option
                 </button>
               )}
             </div>
@@ -332,14 +272,9 @@ function Polls({ socket, currentUser: propCurrentUser, polls: propPolls }) {
 
       {/* Polls List */}
       <div className="polls-list">
-        {loading ? (
+        {sortedPolls.length === 0 ? (
           <div className="empty-polls">
-            <div className="empty-polls-icon"></div>
-            <p>Loading polls...</p>
-          </div>
-        ) : sortedPolls.length === 0 ? (
-          <div className="empty-polls">
-            <div className="empty-polls-icon"></div>
+            <div className="empty-polls-icon">📋</div>
             <p>No polls found. Create one to get started!</p>
           </div>
         ) : (
@@ -364,7 +299,7 @@ function Polls({ socket, currentUser: propCurrentUser, polls: propPolls }) {
                       </span>
                       <span className="poll-dot">•</span>
                       <span className={`poll-status ${poll.status}`}>
-                        {poll.status === 'active' ? 'Active' : 'Closed'}
+                        {poll.status === 'active' ? '🟢 Active' : '🔴 Closed'}
                       </span>
                     </div>
                   </div>
@@ -412,7 +347,7 @@ function Polls({ socket, currentUser: propCurrentUser, polls: propPolls }) {
                             disabled={!poll.isActive || poll.status !== 'active'}
                             title={poll.isActive ? 'Click to vote' : 'Poll is closed'}
                           >
-                            {hasVoted ? 'V' : 'O'}
+                            {hasVoted ? '✓' : '○'}
                           </button>
                           <div className="option-details">
                             <div className="option-text-row">

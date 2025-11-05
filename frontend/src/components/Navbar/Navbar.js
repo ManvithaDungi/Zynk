@@ -47,7 +47,7 @@ const Navbar = () => {
           </Link>
 
           <Link 
-            to="/communication" 
+            to="/communication/dashboard" 
             className={`navbar-link ${location.pathname.startsWith("/communication") ? "active" : ""}`}
           >
             Communication

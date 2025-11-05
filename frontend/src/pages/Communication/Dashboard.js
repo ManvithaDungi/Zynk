@@ -4,135 +4,44 @@
  * Shows user stats, message stats, poll stats, and active users
  */
 
-import React, { useState, useEffect } from 'react';
-import { exportAPI, communicationAPI } from '../../utils/api';
+import React from 'react';
 import './Dashboard.css';
 
-function Dashboard({ 
-  stats: propStats = {
-    users: { total: 0, active: 0, offline: 0, onlinePercentage: 0 },
-    messages: { total: 0, today: 0 },
-    polls: { total: 0, active: 0, totalVotes: 0 }
-  }, 
-  users: propUsers = [], 
-  messages: propMessages = [], 
-  polls: propPolls = [] 
-}) {
-  const [stats, setStats] = useState(propStats);
-  const [users, setUsers] = useState(propUsers);
-  const [messages, setMessages] = useState(propMessages);
-  const [polls, setPolls] = useState(propPolls);
-  const [loading, setLoading] = useState(false);
+const API_URL = 'http://localhost:5000/api';
 
-  /**
-   * Fetch dashboard data when component mounts
-   */
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      if (!propStats && !propUsers && !propMessages && !propPolls) {
-        try {
-          setLoading(true);
-          const [statsResponse, usersResponse, messagesResponse, pollsResponse] = await Promise.all([
-            communicationAPI.getStats(),
-            communicationAPI.getUsers(),
-            communicationAPI.getMessages(),
-            communicationAPI.getPolls()
-          ]);
-          
-          setStats(statsResponse.data || propStats);
-          setUsers(usersResponse.data.users || []);
-          setMessages(messagesResponse.data.messages || []);
-          setPolls(pollsResponse.data.polls || []);
-        } catch (error) {
-          console.error('Error fetching dashboard data:', error);
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchDashboardData();
-  }, [propStats, propUsers, propMessages, propPolls]);
+function Dashboard({ stats, users, messages, polls }) {
   /**
    * Handle CSV export for users
    */
-  const handleExportUsers = async () => {
-    try {
-      const response = await exportAPI.exportUsersCSV();
-      const blob = new Blob([response.data], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'users.csv';
-      link.click();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Export users error:', error);
-      alert('Failed to export users data');
-    }
+  const handleExportUsers = () => {
+    window.open(`${API_URL}/export/users/csv`, '_blank');
   };
 
   /**
    * Handle CSV export for messages
    */
-  const handleExportMessages = async () => {
-    try {
-      const response = await exportAPI.exportMessagesCSV();
-      const blob = new Blob([response.data], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'messages.csv';
-      link.click();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Export messages error:', error);
-      alert('Failed to export messages data');
-    }
+  const handleExportMessages = () => {
+    window.open(`${API_URL}/export/messages/csv`, '_blank');
   };
 
   /**
    * Handle CSV export for polls
    */
-  const handleExportPolls = async () => {
-    try {
-      const response = await exportAPI.exportPollsCSV();
-      const blob = new Blob([response.data], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'polls.csv';
-      link.click();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Export polls error:', error);
-      alert('Failed to export polls data');
-    }
+  const handleExportPolls = () => {
+    window.open(`${API_URL}/export/polls/csv`, '_blank');
   };
 
   /**
    * Handle JSON export for all data
    */
-  const handleExportAll = async () => {
-    try {
-      const response = await exportAPI.exportAllJSON();
-      const blob = new Blob([response.data], { type: 'application/json' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'communication_data.json';
-      link.click();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Export all data error:', error);
-      alert('Failed to export all data');
-    }
+  const handleExportAll = () => {
+    window.open(`${API_URL}/export/all/json`, '_blank');
   };
 
   /**
    * Get active users list
    */
-  const activeUsers = (users || []).filter(u => u.isActive);
+  const activeUsers = (users || []).filter(u => u && u.isActive);
 
   /**
    * Get recent messages (last 5)
@@ -142,7 +51,7 @@ function Dashboard({
   /**
    * Get active polls
    */
-  const activePolls = (polls || []).filter(p => p.isActive && p.status === 'active');
+  const activePolls = (polls || []).filter(p => p && p.isActive && p.status === 'active');
 
   return (
     <div className="dashboard">
@@ -155,18 +64,18 @@ function Dashboard({
       <div className="stats-grid">
         {/* User Statistics */}
         <div className="stat-card">
-          {/* <div className="stat-icon"></div> */}
+          {/* <div className="stat-icon">👥</div> */}
           <div className="stat-content">
             <h3 className="stat-title">Users</h3>
-            <div className="stat-value">{stats.users.total || 0}</div>
+            <div className="stat-value">{(stats && stats.users && stats.users.total) || 0}</div>
             <div className="stat-details">
               <span className="stat-detail">
                 <span className="status-dot active"></span>
-                Active: {stats.users.active || 0}
+                Active: {(stats && stats.users && stats.users.active) || 0}
               </span>
               <span className="stat-detail">
                 <span className="status-dot offline"></span>
-                Offline: {stats.users.offline || 0}
+                Offline: {(stats && stats.users && stats.users.offline) || 0}
               </span>
             </div>
           </div>
@@ -174,13 +83,13 @@ function Dashboard({
 
         {/* Message Statistics */}
         <div className="stat-card">
-          {/* <div className="stat-icon"></div> */}
+          {/* <div className="stat-icon">💬</div> */}
           <div className="stat-content">
             <h3 className="stat-title">Messages</h3>
-            <div className="stat-value">{stats.messages.total || 0}</div>
+            <div className="stat-value">{(stats && stats.messages && stats.messages.total) || 0}</div>
             <div className="stat-details">
               <span className="stat-detail">
-                Today: {stats.messages.today || 0}
+                Today: {(stats && stats.messages && stats.messages.today) || 0}
               </span>
             </div>
           </div>
@@ -188,16 +97,16 @@ function Dashboard({
 
         {/* Poll Statistics */}
         <div className="stat-card">
-          {/* <div className="stat-icon"></div> */}
+          {/* <div className="stat-icon">📋</div> */}
           <div className="stat-content">
             <h3 className="stat-title">Polls</h3>
-            <div className="stat-value">{stats.polls.total || 0}</div>
+            <div className="stat-value">{(stats && stats.polls && stats.polls.total) || 0}</div>
             <div className="stat-details">
               <span className="stat-detail">
-                Active: {stats.polls.active || 0}
+                Active: {(stats && stats.polls && stats.polls.active) || 0}
               </span>
               <span className="stat-detail">
-                Total Votes: {stats.polls.totalVotes || 0}
+                Total Votes: {(stats && stats.polls && stats.polls.totalVotes) || 0}
               </span>
             </div>
           </div>
@@ -209,7 +118,7 @@ function Dashboard({
           <div className="stat-content">
             <h3 className="stat-title">Engagement</h3>
             <div className="stat-value">
-              {stats.users.onlinePercentage || 0}%
+              {(stats && stats.users && stats.users.onlinePercentage) || 0}%
             </div>
             <div className="stat-details">
               <span className="stat-detail">
@@ -254,9 +163,9 @@ function Dashboard({
               <ul className="user-list">
                 {activeUsers.map(user => (
                   <li key={user._id} className="user-item">
-                    <div className="user-avatar">{user.avatar || (user.username || user.name || 'U').substring(0, 2).toUpperCase()}</div>
+                    <div className="user-avatar">{user.avatar || (user.username ? user.username.substring(0, 2).toUpperCase() : 'US')}</div>
                     <div className="user-info">
-                      <div className="user-name">{user.username || user.name}</div>
+                      <div className="user-name">{user.username || user.name || 'User'}</div>
                       <div className="user-status">
                         <span className="status-indicator active"></span>
                         {user.status}
@@ -290,9 +199,9 @@ function Dashboard({
                       </span>
                     </div>
                     <div className="message-content">
-                      {msg.content.length > 80 
-                        ? msg.content.substring(0, 80) + '...' 
-                        : msg.content}
+                      {(msg.content || '').length > 80 
+                        ? (msg.content || '').substring(0, 80) + '...' 
+                        : (msg.content || '')}
                     </div>
                   </li>
                 ))}
@@ -318,10 +227,10 @@ function Dashboard({
                     <div className="poll-question">{poll.question}</div>
                     <div className="poll-info">
                       <span className="poll-votes">
-                        {poll.totalVotes} votes
+                        {(poll.totalVotes || 0)} votes
                       </span>
                       <span className="poll-options">
-                        {poll.options.length} options
+                        {(Array.isArray(poll.options) ? poll.options.length : 0)} options
                       </span>
                     </div>
                   </li>
@@ -347,9 +256,9 @@ function Dashboard({
                   {activePolls[0].question}
                 </div>
                 <div className="poll-results-options">
-                  {activePolls[0].options.map((option, index) => {
+                  {(Array.isArray(activePolls[0].options) ? activePolls[0].options : []).map((option, index) => {
                     const percentage = activePolls[0].totalVotes > 0
-                      ? ((option.votes / activePolls[0].totalVotes) * 100).toFixed(1)
+                      ? (((option.votes || 0) / activePolls[0].totalVotes) * 100).toFixed(1)
                       : 0;
                     
                     return (
